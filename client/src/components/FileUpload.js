@@ -1,93 +1,69 @@
-import React, { Fragment, useState } from 'react';
+import React, { Fragment, useEffect, useState } from 'react';
 import Message from './Message';
 import Progress from './Progress';
 import axios from 'axios';
 
-const FileUpload = (videoPreview) => {
+const FileUpload = ({ uploadedFile }) => {
   // TODO: 
   // 1. Add video preview, re-record and submit buttons
   // 2. On cancel, hide view
   // 3. On submit upload and show progress
   // 4. When file is uploaded, show file uploaded view
 
-  const [file, setFile] = useState('');
-  const [filename, setFilename] = useState('Choose File');
-  const [uploadedFile, setUploadedFile] = useState({});
   const [message, setMessage] = useState('');
   const [uploadPercentage, setUploadPercentage] = useState(0);
 
-  const onChange = e => {
-    setFile(e.target.files[0]);
-    setFilename(e.target.files[0].name);
-  };
+  useEffect(() => {
+    (async function () {
+      const formData = new FormData();
+      formData.append('file', uploadedFile);
 
-  const onSubmit = async e => {
-    e.preventDefault();
-    const formData = new FormData();
-    formData.append('file', file);
+      try {
+        const res = await axios.post('http://localhost:5000/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          },
+          onUploadProgress: progressEvent => {
+            setUploadPercentage(
+              parseInt(
+                Math.round((progressEvent.loaded * 100) / progressEvent.total)
+              )
+            );
 
-    try {
-      const res = await axios.post('http://localhost:5000/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        },
-        onUploadProgress: progressEvent => {
-          setUploadPercentage(
-            parseInt(
-              Math.round((progressEvent.loaded * 100) / progressEvent.total)
-            )
-          );
+            // Clear percentage
+            setTimeout(() => setUploadPercentage(0), 10000);
+          }
+        });
 
-          // Clear percentage
-          setTimeout(() => setUploadPercentage(0), 10000);
+        const { nftResponse } = res.data;
+        console.log(nftResponse)
+
+      } catch (err) {
+        if (err.response.status === 500) {
+          setMessage('There was a problem with the server');
+        } else {
+          setMessage(err.response.data.msg);
         }
-      });
-
-      const { nftResponse } = res.data;
-      console.log(nftResponse)
-
-    } catch (err) {
-      if (err.response.status === 500) {
-        setMessage('There was a problem with the server');
-      } else {
-        setMessage(err.response.data.msg);
       }
-    }
-  };
+    })();
+  });
 
   return (
-    <Fragment>
+    <div id="overlay">
       {message ? <Message msg={message} /> : null}
-      <form onSubmit={onSubmit}>
-        <div className='custom-file mb-4'>
-          <input
-            type='file'
-            className='custom-file-input'
-            id='customFile'
-            onChange={onChange}
-          />
-          <label className='custom-file-label' htmlFor='customFile'>
-            {filename}
-          </label>
-        </div>
+      <form>
 
         <Progress percentage={uploadPercentage} />
 
-        <input
-          type='submit'
-          value='Upload'
-          className='btn btn-primary btn-block mt-4'
-        />
       </form>
       {uploadedFile ? (
         <div className='row mt-5'>
           <div className='col-md-6 m-auto'>
             <h3 className='text-center'>{uploadedFile.fileName}</h3>
-            <img style={{ width: '90%' }} src={uploadedFile.filePath} alt='' />
           </div>
         </div>
       ) : null}
-    </Fragment>
+    </div>
   );
 };
 
