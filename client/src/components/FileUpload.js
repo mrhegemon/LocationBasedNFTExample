@@ -37,11 +37,9 @@ const FileUpload = () => {
         }
       });
 
-      const { fileName, filePath } = res.data;
+      const { nftResponse } = res.data;
+      console.log(nftResponse)
 
-      setUploadedFile({ fileName, filePath });
-
-      setMessage('File Uploaded');
     } catch (err) {
       if (err.response.status === 500) {
         setMessage('There was a problem with the server');

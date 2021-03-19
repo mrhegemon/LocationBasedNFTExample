@@ -1,29 +1,40 @@
 const express = require('express');
 const fileUpload = require('express-fileupload');
+const { initMinter, stopMinter, mintNFT, getNFT } = require('./src/NFT');
+require('dotenv').config();
 
-const app = express();
-var cors = require('cors')
-app.use(cors({ origin: "*"}))
-app.use(fileUpload());
-app.use(express.static('public'))
+initMinter(process.env.SECRET).then(() => {
 
-// Upload Endpoint
-app.post('/upload', (req, res) => {
-    console.log("Received upload request")
-  if (req.files === null) {
-    return res.status(400).json({ msg: 'No file uploaded' });
-  }
+  const app = express();
+  var cors = require('cors')
+  app.use(cors({ origin: "*"}))
+  app.use(fileUpload());
+  app.use(express.static('public'))
 
-  const file = req.files.file;
-
-  file.mv(`${__dirname}/public/uploads/${file.name}`, err => {
-    if (err) {
-      console.error(err);
-      return res.status(500).send(err);
+  // Upload Endpoint
+  app.post('/upload', (req, res) => {
+    
+    if (req.files === null) {
+      return res.status(400).json({ msg: 'No file uploaded' });
     }
 
-    res.json({ fileName: file.name, filePath: `/uploads/${file.name}` });
-  });
-});
+    const file = req.files.file;
 
-app.listen(5000, () => console.log('Server Started...'));
+    file.mv(`${__dirname}/public/uploads/${file.name}`, async err => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send(err);
+      }
+
+      const nftResponse = await mintNFT(file.name)
+      if(!nftResponse) {
+        return res.status(500).json({ msg: 'Failed to mint token, try again soon.' });
+      }
+
+      res.json({ nftResponse });
+    });
+  });
+
+  app.listen(5000, () => console.log('Server Started...'));
+
+})
