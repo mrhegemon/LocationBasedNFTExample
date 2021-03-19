@@ -1,13 +1,33 @@
-import FileUpload from "./FileUpload.js"
-import Nav from "./Nav.js"
 import { Entity, Scene } from 'aframe-react';
+import { useState, useCallback } from 'react';
+import { IconButton } from '@material-ui/core';
+import PhotoCamera from '@material-ui/icons/PhotoCamera';
+
+import FileUpload from "./FileUpload.js"
+import CaptureView from "./CaptureView.js"
+import FileUploadComplete from "./CaptureView.js"
+import Nav from "./Nav.js"
+import Splash from "./Splash.js"
+
+import { ViewModes } from "../constants/ViewModes"
+
 function App() {
   // THREEx.ArToolkitContext.baseURL = 'https://raw.githack.com/jeromeetienne/ar.js/master/three.js/'
+  const [viewMode, setViewMode] = useState(ViewModes.ARView);
+
+  const handleClick = useCallback((success, payload) => {
+    if(success){
+      setViewMode(ViewModes.PreviewUploadView);
+      console.log("Video captured successfully");
+    } else {
+      setViewMode(ViewModes.ARView);
+      console.log("Video capture cancelled");
+    }
+  }, []);
 
   return (
     <div className="App">
       <Nav />
-      <FileUpload />
       <Scene
         environment={{ preset: "forest" }}
         vr-mode-ui='enabled: false'
@@ -18,6 +38,24 @@ function App() {
             rotation-reader
           />
         </Scene>
+        { viewMode === ViewModes.ARView && 
+        <IconButton size="large"  onClick={() => { setViewMode(ViewModes.CaptureView)}} style={{position:"absolute", width:"3em", height:"3em", marginLeft: "50%", marginRight: "50%", bottom:"3em"}}>
+          <PhotoCamera fontSize="large"/>
+        </IconButton>
+        }
+        { viewMode === ViewModes.Splash && 
+          <Splash />
+        }
+        { viewMode === ViewModes.CaptureView && 
+          <CaptureView callback={handleClick} />
+        }
+      { viewMode === ViewModes.PreviewUploadView && 
+        <FileUpload />
+      }
+      { viewMode === ViewModes.UploadedView && 
+        <FileUploadComplete />
+      }
+
     </div>
   );
 }
