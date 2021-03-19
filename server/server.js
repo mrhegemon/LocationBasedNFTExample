@@ -2,6 +2,7 @@ const express = require('express');
 const fileUpload = require('express-fileupload');
 const querystring = require('querystring');
 const url = require('url');
+var uuidv4 = require('uuid/v4');
 
 const { initMinter, stopMinter, mintNFT, getNFT } = require('./src/NFT');
 
@@ -52,24 +53,29 @@ initMinter(process.env.SECRET).then(() => {
 
   // Upload Endpoint
   app.post('/upload', (req, res) => {
-    
+    console.log("Upload file request received");
     if (req.files === null) {
+      console.log("No file uploaded");
+
       return res.status(400).json({ msg: 'No file uploaded' });
     }
 
     const file = req.files.file;
+    const fileName =  uuidv4() + '.webm';
+    file.name = fileName
 
-    file.mv(`${__dirname}/public/uploads/${file.name}`, async err => {
+    file.mv(`${__dirname}/public/uploads/${fileName}`, async err => {
       if (err) {
         console.error(err);
         return res.status(500).send(err);
       }
 
-      const nftResponse = await mintNFT(file.name)
+      const nftResponse = await mintNFT(fileName);
+      console.log("**** NFT MINTED");
       if(!nftResponse) {
         return res.status(500).json({ msg: 'Failed to mint token, try again soon.' });
       }
-
+      console.log(nftResponse);
       res.json({ nftResponse });
     });
   });

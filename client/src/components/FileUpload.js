@@ -2,66 +2,88 @@ import React, { Fragment, useEffect, useState } from 'react';
 import Message from './Message';
 import Progress from './Progress';
 import axios from 'axios';
+import { Button } from "@material-ui/core";
 
-const FileUpload = ({ uploadedFile }) => {
+function blobToFile(theBlob, fileName){
+  //A Blob() is almost a File() - it's just missing the two properties below which we will add
+  theBlob.lastModifiedDate = new Date();
+  theBlob.name = fileName;
+  return theBlob;
+}
+
+const UploadStates = {
+  NotUploaded: 'not',
+  Uploading: 'uploading',
+  Uploaded: 'uploaded'
+}
+
+const FileUpload = ({ upload, callback }) => {
   // TODO: 
   // 1. Add video preview, re-record and submit buttons
   // 2. On cancel, hide view
   // 3. On submit upload and show progress
   // 4. When file is uploaded, show file uploaded view
 
+  const [uploadState, setUploadState] = useState(UploadStates.NotUploaded);
   const [message, setMessage] = useState('');
   const [uploadPercentage, setUploadPercentage] = useState(0);
+  const [uploadedFile, setUploadedFile] = useState(null);
 
   useEffect(() => {
-    (async function () {
+    if(uploadState !== UploadStates.NotUploaded)
+      return;
+    setUploadState(UploadStates.Uploading);
       const formData = new FormData();
+      const uploadedFile = blobToFile(upload, "video");
+      setUploadedFile(uploadedFile);
       formData.append('file', uploadedFile);
 
-      try {
-        const res = await axios.post('http://localhost:5000/upload', formData, {
+        console.log("ATTEMPTING FILE UPLOAD")
+        console.log("Uploaded file is")
+        console.log(upload)
+        console.log(uploadedFile)
+
+        axios.post('http://127.0.0.1:5000/upload', formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           },
           onUploadProgress: progressEvent => {
+            console.log(progressEvent);
+            const uploadPercentage = parseInt(
+              Math.round((progressEvent.loaded * 100) / progressEvent.total)
+            );
             setUploadPercentage(
-              parseInt(
-                Math.round((progressEvent.loaded * 100) / progressEvent.total)
-              )
+              uploadPercentage
             );
 
-            // Clear percentage
-            setTimeout(() => setUploadPercentage(0), 10000);
+              if(uploadPercentage === 100 && uploadState === UploadStates.Uploading) {
+                setUploadState(UploadStates.Uploaded);
+              }
           }
-        });
+        }).then((res) => {
 
-        const { nftResponse } = res.data;
-        console.log(nftResponse)
 
-      } catch (err) {
+          const { nftResponse } = res.data;
+          console.log(nftResponse)
+        }).catch (err => {
         if (err.response.status === 500) {
           setMessage('There was a problem with the server');
         } else {
           setMessage(err.response.data.msg);
         }
-      }
-    })();
-  });
+      })
+  }, [upload]);
 
   return (
-    <div id="overlay">
+    <div className="overlay">
       {message ? <Message msg={message} /> : null}
-      <form>
 
         <Progress percentage={uploadPercentage} />
 
-      </form>
       {uploadedFile ? (
-        <div className='row mt-5'>
-          <div className='col-md-6 m-auto'>
-            <h3 className='text-center'>{uploadedFile.fileName}</h3>
-          </div>
-        </div>
+        <Button onClick={() => callback('success')}>
+                Continue
+        </Button>
       ) : null}
     </div>
   );

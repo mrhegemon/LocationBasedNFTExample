@@ -43,6 +43,8 @@ function App() {
     entity.setAttribute('gltf-model', model.url);
   };
   
+
+
   function renderPlaces(places) {
     let scene = document.querySelector('a-scene');
   
@@ -59,6 +61,30 @@ function App() {
     });
   }
   
+  const handleFileUploadCallback = (status) => {
+    console.log("File uploaded and returning, status is", status);
+    getCaches(() => {
+      setViewMode(ViewModes.ARView);
+    })
+  }
+
+  const getCaches = (callback) => {
+    const max = 50;
+    axios.get(`http://127.0.0.1:5000/get?lat=${latLong.lat}&lng=${latLong.lng}&max=${max}`)
+  .then(function (response) {
+    // handle successee
+    console.log(response);
+    setCaches(response.data.tokens);
+    if(callback) callback();
+    renderPlaces(caches);
+
+  })
+  .catch(function (error) {
+    // handle error
+    console.log(error);
+  })
+  }
+  
   useEffect(() => {
     if(!latLong){
     if (navigator.geolocation) {
@@ -71,20 +97,7 @@ function App() {
   return;
   }
 
-    const max = 50;
-    axios.get(`http://127.0.0.1:5000/get?lat=${latLong.lat}&lng=${latLong.lng}&max=${max}`)
-  .then(function (response) {
-    // handle successee
-    console.log(response);
-    setCaches(response.data);
-
-    renderPlaces(caches);
-
-  })
-  .catch(function (error) {
-    // handle error
-    console.log(error);
-  })
+  getCaches();
 
   }, [latLong])
 
@@ -125,7 +138,7 @@ function App() {
           <CaptureView callback={handleVideoCallback} />
         }
       { viewMode === ViewModes.UploadView && 
-        <FileUpload upload={video} />
+        <FileUpload upload={video} callback={handleFileUploadCallback}/>
       }
 
     </div>
