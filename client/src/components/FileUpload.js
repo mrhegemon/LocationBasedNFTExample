@@ -3,7 +3,13 @@ import Message from './Message';
 import Progress from './Progress';
 import axios from 'axios';
 
-const FileUpload = () => {
+const FileUpload = (videoPreview) => {
+  // TODO: 
+  // 1. Add video preview, re-record and submit buttons
+  // 2. On cancel, hide view
+  // 3. On submit upload and show progress
+  // 4. When file is uploaded, show file uploaded view
+
   const [file, setFile] = useState('');
   const [filename, setFilename] = useState('Choose File');
   const [uploadedFile, setUploadedFile] = useState({});
