@@ -12,6 +12,12 @@ code {
     monospace;
 }
 
+a-scene, a-canvas {
+  z-index: -1;
+  height: 100%;
+  width: 100%;
+}
+
 .nav {
   height: 2em;
   padding: .5em;
