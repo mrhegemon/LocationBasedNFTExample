@@ -1,5 +1,5 @@
 import { Entity, Scene } from 'aframe-react';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { IconButton } from '@material-ui/core';
 import PhotoCamera from '@material-ui/icons/PhotoCamera';
 
@@ -15,6 +15,16 @@ function App() {
   // THREEx.ArToolkitContext.baseURL = 'https://raw.githack.com/jeromeetienne/ar.js/master/three.js/'
   const [viewMode, setViewMode] = useState(ViewModes.ARView);
 
+  const handleClick = useCallback((success, payload) => {
+    if(success){
+      setViewMode(ViewModes.PreviewUploadView);
+      console.log("Video captured successfully");
+    } else {
+      setViewMode(ViewModes.ARView);
+      console.log("Video capture cancelled");
+    }
+  }, []);
+
   return (
     <div className="App">
       <Nav />
@@ -29,7 +39,6 @@ function App() {
           />
         </Scene>
         { viewMode === ViewModes.ARView && 
-
         <IconButton size="large"  onClick={() => { setViewMode(ViewModes.CaptureView)}} style={{position:"absolute", width:"3em", height:"3em", marginLeft: "50%", marginRight: "50%", bottom:"3em"}}>
           <PhotoCamera fontSize="large"/>
         </IconButton>
@@ -38,7 +47,7 @@ function App() {
           <Splash />
         }
         { viewMode === ViewModes.CaptureView && 
-          <CaptureView />
+          <CaptureView callback={handleClick} />
         }
       { viewMode === ViewModes.PreviewUploadView && 
         <FileUpload />
