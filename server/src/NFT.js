@@ -9,11 +9,13 @@ const rippleTestNet = 'wss://s.altnet.rippletest.net';
 const Ripple = new RippleAPI({ server: rippleTestNet });
 let IPFS;
 const treasuryWallet = {};
+const NFTs = new Map();
 
 const initMinter = async (secret) => {
   return Promise.all([
     startIPFS(),
-    connectToXRPL(secret)
+    connectToXRPL(secret),
+    verifyWallet(treasuryWallet.address)
   ]);
 }
 
@@ -30,12 +32,34 @@ const mintNFT = async (filePathToUpload) => {
   const rootString = rootCID.cid.toString();
   const rootStringURL = `ipfs://${rootString}/`;
   const xrpDomainField = new Buffer.from(rootStringURL).toString('hex').toUpperCase();
-  return await updateXRPWalletData(xrpDomainField, treasuryWallet);
+  const tx = await updateXRPWalletData(xrpDomainField, treasuryWallet);
+  return { 
+    timestamp: Date.now(),
+    ipfs: rootString,
+  }
 }
 
 const getNFT = async (tx) => {
   // todo
 }
+
+const getNFTsFromWallet = async () => {
+  if(!await verifyWallet(treasuryWallet.address)) return;
+  const options = {
+
+    limit: 5,
+    earliestFirst: true,
+    minLedgerVersion: 33928173
+  };
+  try {
+
+    const txns = await Ripple.getTransactions(treasuryWallet.address, options);
+    console.log(txns)
+  } catch (e) {
+    console.log(e)
+  }
+}
+
 
 const connectToXRPL = async (secret) => {
   await Ripple.connect();
@@ -52,6 +76,7 @@ const connectToXRPL = async (secret) => {
   } else {
     console.log('Failed to derive secret')
   }
+  getNFTsFromWallet();
 }
 
 const startIPFS = async () => {
@@ -81,7 +106,7 @@ const verifyWallet = async (walletAddress) => {
   try {
     return new Promise(async (resolve, reject) => {
         try {
-          await Ripple.getSettings(walletAddress);
+          console.log(await Ripple.getSettings(walletAddress));
           resolve(true)
         } catch (error) {
           if(error.data) {
