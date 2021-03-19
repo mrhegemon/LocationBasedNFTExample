@@ -1,93 +1,91 @@
-import React, { Fragment, useState } from 'react';
+import React, { Fragment, useEffect, useState } from 'react';
 import Message from './Message';
 import Progress from './Progress';
 import axios from 'axios';
+import { Button } from "@material-ui/core";
 
-const FileUpload = (videoPreview) => {
+function blobToFile(theBlob, fileName){
+  //A Blob() is almost a File() - it's just missing the two properties below which we will add
+  theBlob.lastModifiedDate = new Date();
+  theBlob.name = fileName;
+  return theBlob;
+}
+
+const UploadStates = {
+  NotUploaded: 'not',
+  Uploading: 'uploading',
+  Uploaded: 'uploaded'
+}
+
+const FileUpload = ({ upload, callback }) => {
   // TODO: 
   // 1. Add video preview, re-record and submit buttons
   // 2. On cancel, hide view
   // 3. On submit upload and show progress
   // 4. When file is uploaded, show file uploaded view
 
-  const [file, setFile] = useState('');
-  const [filename, setFilename] = useState('Choose File');
-  const [uploadedFile, setUploadedFile] = useState({});
+  const [uploadState, setUploadState] = useState(UploadStates.NotUploaded);
   const [message, setMessage] = useState('');
   const [uploadPercentage, setUploadPercentage] = useState(0);
+  const [uploadedFile, setUploadedFile] = useState(null);
 
-  const onChange = e => {
-    setFile(e.target.files[0]);
-    setFilename(e.target.files[0].name);
-  };
+  useEffect(() => {
+    if(uploadState !== UploadStates.NotUploaded)
+      return;
+    setUploadState(UploadStates.Uploading);
+      const formData = new FormData();
+      const uploadedFile = blobToFile(upload, "video");
+      setUploadedFile(uploadedFile);
+      formData.append('file', uploadedFile);
 
-  const onSubmit = async e => {
-    e.preventDefault();
-    const formData = new FormData();
-    formData.append('file', file);
+        console.log("ATTEMPTING FILE UPLOAD")
+        console.log("Uploaded file is")
+        console.log(upload)
+        console.log(uploadedFile)
 
-    try {
-      const res = await axios.post('http://localhost:5000/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        },
-        onUploadProgress: progressEvent => {
-          setUploadPercentage(
-            parseInt(
+        axios.post('http://127.0.0.1:5000/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          },
+          onUploadProgress: progressEvent => {
+            console.log(progressEvent);
+            const uploadPercentage = parseInt(
               Math.round((progressEvent.loaded * 100) / progressEvent.total)
-            )
-          );
+            );
+            setUploadPercentage(
+              uploadPercentage
+            );
 
-          // Clear percentage
-          setTimeout(() => setUploadPercentage(0), 10000);
+              if(uploadPercentage === 100 && uploadState === UploadStates.Uploading) {
+                setUploadState(UploadStates.Uploaded);
+              }
+          }
+        }).then((res) => {
+
+
+          const { nftResponse } = res.data;
+          console.log(nftResponse)
+        }).catch (err => {
+        if (err.response.status === 500) {
+          setMessage('There was a problem with the server');
+        } else {
+          setMessage(err.response.data.msg);
         }
-      });
-
-      const { nftResponse } = res.data;
-      console.log(nftResponse)
-
-    } catch (err) {
-      if (err.response.status === 500) {
-        setMessage('There was a problem with the server');
-      } else {
-        setMessage(err.response.data.msg);
-      }
-    }
-  };
+      })
+  }, [upload]);
 
   return (
-    <Fragment>
+    <div className="overlay">
       {message ? <Message msg={message} /> : null}
-      <form onSubmit={onSubmit}>
-        <div className='custom-file mb-4'>
-          <input
-            type='file'
-            className='custom-file-input'
-            id='customFile'
-            onChange={onChange}
-          />
-          <label className='custom-file-label' htmlFor='customFile'>
-            {filename}
-          </label>
-        </div>
 
         <Progress percentage={uploadPercentage} />
 
-        <input
-          type='submit'
-          value='Upload'
-          className='btn btn-primary btn-block mt-4'
-        />
-      </form>
       {uploadedFile ? (
-        <div className='row mt-5'>
-          <div className='col-md-6 m-auto'>
-            <h3 className='text-center'>{uploadedFile.fileName}</h3>
-            <img style={{ width: '90%' }} src={uploadedFile.filePath} alt='' />
-          </div>
-        </div>
+        <Button onClick={() => callback('success')}>
+                Continue
+        </Button>
       ) : null}
-    </Fragment>
+    </div>
   );
 };
 
