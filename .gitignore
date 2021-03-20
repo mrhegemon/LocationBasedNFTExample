@@ -107,3 +107,4 @@ server/public/uploads
 
 package-lock.json
 yarn.lock
+public/uploads/

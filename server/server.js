@@ -9,6 +9,8 @@ const { initMinter, stopMinter, mintNFT, getNFT } = require('./src/NFT');
 
 require('dotenv').config();
 
+if(!process.env.SECRET) throw new Error('No treasury wallet supplied, aborting...');
+
 initMinter(process.env.SECRET).then(() => {
 
   const app = express();
