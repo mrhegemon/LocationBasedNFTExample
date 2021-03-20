@@ -29,6 +29,7 @@
     "nodemon": "^2.0.7",
     "react": "17.0.1",
     "react-dom": "17.0.1",
+    "react-no-ssr": "^1.1.0",
     "react-scripts": "4.0.3",
     "react-video-recorder": "^3.17.2",
     "ripple-lib": "^1.9.0",
