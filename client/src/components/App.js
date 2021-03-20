@@ -20,11 +20,10 @@ function App() {
 
   const [ canUseLocation, setCanUseLocation] = useState(true);
 
-  var mockModel = {
-        url: './assets/magnemite/scene.gltf',
+  var markerModel = {
+        url: './assets/Marker.glb',
         scale: '0.5 0.5 0.5',
-        info: 'Magnemite, Lv. 5, HP 10/10',
-        rotation: '0 180 0',
+        info: ''
     }
   
   var setModel = function (model, entity) {
@@ -38,25 +37,52 @@ function App() {
   
     if (model.position) {
         entity.setAttribute('position', model.position);
+    } else {
+      console.log("Model has no position")
     }
   
     entity.setAttribute('gltf-model', model.url);
   };
-  
 
+  useEffect(() => {
+    renderPlaces(caches);
+  }, [caches])
 
   function renderPlaces(places) {
+    console.log("Rendering places");
+    console.log(places);
     let scene = document.querySelector('a-scene');
-  
+
     places.forEach((place) => {
         let latitude = place.location.lat;
         let longitude = place.location.lng;
-  
+        console.log("latitude is", latitude);
+        console.log("longitude is", longitude);
+
+        const thumbnailUrl = place.thumbnailUrl;
+
+        console.log("Got thumbnail", thumbnailUrl);
+
+        // TODO: Apply thumbnail as image to marker material
+
         let model = document.createElement('a-entity');
-        model.setAttribute('gps-entity-place', `latitude: ${latitude}; longitude: ${longitude};`);
+
+        if( model.getAttribute('id') == undefined ||
+            model.getAttribute('id') == null ||
+            model.getAttribute('id') == ""
+        ){
+          console.log("Model ID isn't set");
+
+          model.setAttribute('gps-entity-place', `latitude: ${latitude}; longitude: ${longitude};`);
+          model.setAttribute("look-at", "[gps-camera]");
+          
+          setModel(markerModel, model);
+              
+          const distanceMsg = model.getAttribute('gps-entity-place');
   
-        setModel(mockModel, model);
-    
+          console.log("Distance message is", distanceMsg);
+        }
+
         scene.appendChild(model);
     });
   }
@@ -69,15 +95,15 @@ function App() {
   }
 
   const getCaches = (callback) => {
+    console.log("Getting caches")
     const max = 50;
     axios.get(`http://127.0.0.1:5000/get?lat=${latLong.lat}&lng=${latLong.lng}&max=${max}`)
   .then(function (response) {
     // handle successee
     console.log(response);
     setCaches(response.data.tokens);
-    if(callback) callback();
     renderPlaces(caches);
-
+    if(callback) callback();
   })
   .catch(function (error) {
     // handle error
@@ -101,7 +127,6 @@ function App() {
 
   }, [latLong])
 
-
   const handleVideoCallback = useCallback((success, payload) => {
     if(success){
       setVideo(payload);
@@ -119,7 +144,7 @@ function App() {
       <Scene
         environment={{ preset: "forest" }}
         vr-mode-ui='enabled: false'
-        arjs='sourceType: webcam; sourceWidth:1280; sourceHeight:960; displayWidth: 1280; displayHeight: 960; debugUIEnabled: false;'>
+        arjs='sourceType: webcam; sourceWidth:1280; sourceHeight:960; displayWidth: 1280; displayHeight: 960; debugUIEnabled: true;'>
           <Entity
             primitive="a-camera"
             gps-camera

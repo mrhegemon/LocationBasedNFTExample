@@ -3,7 +3,8 @@ const fileUpload = require('express-fileupload');
 const querystring = require('querystring');
 const url = require('url');
 var uuidv4 = require('uuid/v4');
-
+const fs = require('fs')
+const genThumbnail = require('simple-thumbnail')
 const { initMinter, stopMinter, mintNFT, getNFT } = require('./src/NFT');
 
 require('dotenv').config();
@@ -22,22 +23,25 @@ initMinter(process.env.SECRET).then(() => {
               name: "DTLA_1", // Marker is irrelevant
               location:{
                   lat: 34.0407,
-                  long: 118.2468
-              }
+                  lng: 118.2468
+              },
+              thumbnailUrl: "/uploads/0fdc8067-7609-47d8-8401-4d5ba05c90b9.png"
           },
           {
             name: "DTLA_2", // Marker is irrelevant
             location:{
                 lat: 34.0417,
-                long: 118.2478
-            }
+                lng: 118.2478
+            },
+            thumbnailUrl: "/uploads/0fdc8067-7609-47d8-8401-4d5ba05c90b9.png"
         },
         {
             name: "DTLA_3", // Marker is irrelevant
             location:{
                 lat: 34.039,
-                long: 118.2458
-            }
+                lng: 118.2458
+            },
+            thumbnailUrl: "/uploads/0fdc8067-7609-47d8-8401-4d5ba05c90b9.png"
         }
       ]
   }
@@ -70,13 +74,20 @@ initMinter(process.env.SECRET).then(() => {
         return res.status(500).send(err);
       }
 
+      genThumbnail(`${__dirname}/public/uploads/${fileName}`, `${__dirname}/public/uploads/${fileName.replace('webm','png')}`, '512x?')
+
       const nftResponse = await mintNFT(fileName);
       console.log("**** NFT MINTED");
       if(!nftResponse) {
         return res.status(500).json({ msg: 'Failed to mint token, try again soon.' });
       }
       console.log(nftResponse);
-      res.json({ nftResponse });
+
+      // TODO: Change the thumbnail URL as it is currently hardcoded
+      res.json({
+        ...nftResponse,
+        thumbnailUrl: `/uploads/${fileName.replace('webm','png')}`
+       });
     });
   });
 

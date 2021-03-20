@@ -62,9 +62,13 @@ const FileUpload = ({ upload, callback }) => {
           }
         }).then((res) => {
 
+          const { resultCode, thumbnailUrl } = res.data;
+          
+          console.log("Received response from NFT upload:", resultCode);
 
-          const { nftResponse } = res.data;
-          console.log(nftResponse)
+          
+
+
         }).catch (err => {
         if (err.response.status === 500) {
           setMessage('There was a problem with the server');
