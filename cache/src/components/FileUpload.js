@@ -43,7 +43,7 @@ const FileUpload = ({ upload, callback }) => {
         console.log(upload)
         console.log(uploadedFile)
 
-        axios.post('http://127.0.0.1:5000/upload', formData, {
+        axios.post('http://127.0.0.1:3000/upload', formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           },
@@ -70,11 +70,7 @@ const FileUpload = ({ upload, callback }) => {
 
 
         }).catch (err => {
-        if (err.response.status === 500) {
-          setMessage('There was a problem with the server');
-        } else {
-          setMessage(err.response.data.msg);
-        }
+          console.log(err);
       })
   }, [upload]);
 

@@ -12,46 +12,50 @@ const { initMinter, stopMinter, mintNFT, getNFT } = require('./src/NFT');
 require('dotenv').config();
 
 const dev = process.env.NODE_ENV !== 'production'
-const app = next({ dev })
-const handle = app.getRequestHandler()
+const nextApp = next({ dev })
+const handle = nextApp.getRequestHandler()
+const app = express();
+var cors = require('cors')
+app.use(cors({ origin: "*" }))
+app.use(fileUpload());
+app.use(express.static('public'))
 
-if(!process.env.SECRET) throw new Error('No treasury wallet supplied, aborting...');
+// TODO: DO THE REQUEST HANDLER FOR NEXT
 
-initMinter(process.env.SECRET).then(() => {
+if (!process.env.SECRET) throw new Error('No treasury wallet supplied, aborting...');
+nextApp.prepare().then(() => {
+  console.log("Next app prepared");
+  // initMinter(process.env.SECRET).then(() => {
+  //   console.log("Minter prepped");
 
-  const app = express();
-  var cors = require('cors')
-  app.use(cors({ origin: "*"}))
-  app.use(fileUpload());
-  app.use(express.static('public'))
 
   const mockNFTS = {
-      tokens: [
-          {
-              name: "DTLA_1", // Marker is irrelevant
-              location:{
-                  lat: 34.0407,
-                  lng: 118.2468
-              },
-              thumbnailUrl: "/uploads/0fdc8067-7609-47d8-8401-4d5ba05c90b9.png"
-          },
-          {
-            name: "DTLA_2", // Marker is irrelevant
-            location:{
-                lat: 34.0417,
-                lng: 118.2478
-            },
-            thumbnailUrl: "/uploads/0fdc8067-7609-47d8-8401-4d5ba05c90b9.png"
+    tokens: [
+      {
+        name: "DTLA_1", // Marker is irrelevant
+        location: {
+          lat: 34.0407,
+          lng: 118.2468
         },
-        {
-            name: "DTLA_3", // Marker is irrelevant
-            location:{
-                lat: 34.039,
-                lng: 118.2458
-            },
-            thumbnailUrl: "/uploads/0fdc8067-7609-47d8-8401-4d5ba05c90b9.png"
-        }
-      ]
+        thumbnailUrl: "/uploads/0fdc8067-7609-47d8-8401-4d5ba05c90b9.png"
+      },
+      {
+        name: "DTLA_2", // Marker is irrelevant
+        location: {
+          lat: 34.0417,
+          lng: 118.2478
+        },
+        thumbnailUrl: "/uploads/0fdc8067-7609-47d8-8401-4d5ba05c90b9.png"
+      },
+      {
+        name: "DTLA_3", // Marker is irrelevant
+        location: {
+          lat: 34.039,
+          lng: 118.2458
+        },
+        thumbnailUrl: "/uploads/0fdc8067-7609-47d8-8401-4d5ba05c90b9.png"
+      }
+    ]
   }
 
   app.get('/get', (req, res) => {
@@ -61,7 +65,6 @@ initMinter(process.env.SECRET).then(() => {
     console.log("Received get request with lat long max", lat, lng, max);
     return res.status(200).send(JSON.stringify(mockNFTS));
   })
-
 
   // Upload Endpoint
   app.post('/upload', (req, res) => {
@@ -73,7 +76,7 @@ initMinter(process.env.SECRET).then(() => {
     }
 
     const file = req.files.file;
-    const fileName =  uuidv4() + '.webm';
+    const fileName = uuidv4() + '.webm';
     file.name = fileName
 
     file.mv(`${__dirname}/public/uploads/${fileName}`, async err => {
@@ -82,11 +85,11 @@ initMinter(process.env.SECRET).then(() => {
         return res.status(500).send(err);
       }
 
-      genThumbnail(`${__dirname}/public/uploads/${fileName}`, `${__dirname}/public/uploads/${fileName.replace('webm','png')}`, '512x?')
+      genThumbnail(`${__dirname}/public/uploads/${fileName}`, `${__dirname}/public/uploads/${fileName.replace('webm', 'png')}`, '512x?')
 
       const nftResponse = await mintNFT(fileName);
       console.log("**** NFT MINTED");
-      if(!nftResponse) {
+      if (!nftResponse) {
         return res.status(500).json({ msg: 'Failed to mint token, try again soon.' });
       }
       console.log(nftResponse);
@@ -94,11 +97,16 @@ initMinter(process.env.SECRET).then(() => {
       // TODO: Change the thumbnail URL as it is currently hardcoded
       res.json({
         ...nftResponse,
-        thumbnailUrl: `/uploads/${fileName.replace('webm','png')}`
-       });
+        thumbnailUrl: `/uploads/${fileName.replace('webm', 'png')}`
+      });
     });
   });
 
-  app.listen(5000, () => console.log('Server Started...'));
+  // Don't remove. Important for the server to work. Default route.
+  app.get('*', (req, res) => {
+    return handle(req, res);
+  });
+  app.listen(3000, () => console.log('Server Started...'));
 
 })
+// })
