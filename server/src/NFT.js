@@ -1,21 +1,30 @@
 const { create, globSource } = require('ipfs-core');
 const { RippleAPI } = require('ripple-lib');
 const xAddr = require('xrpl-tagged-address-codec');
+const { XummSdk } = require('xumm-sdk')
+var uuidv4 = require('uuid/v4');
+
 // const ipfsHash = require('ipfs-only-hash')
 // const fileSys = require('fs');
 // const crypto = require('crypto');
 
+const tempXummAcc = 'rLv5Hjg6rpN9TLfPrQ7u3Sr4UagX4co7FW'
+
+const { getNFTs, saveNFT } = require('./storage')
+
 const rippleTestNet = 'wss://s.altnet.rippletest.net';
 const Ripple = new RippleAPI({ server: rippleTestNet });
 let IPFS;
-const treasuryWallet = {};
-const NFTs = new Map();
+
+const XUMM = new XummSdk(process.env.XUMMKEY, process.env.XUMMSECRET);
+
+const treasuryWallet = {}
 
 const initMinter = async (secret) => {
   return Promise.all([
     startIPFS(),
-    connectToXRPL(secret),
-    verifyWallet(treasuryWallet.address)
+    startRipple(secret),
+    startXumm(),
   ]);
 }
 
@@ -26,88 +35,178 @@ const stopMinter = async () => {
   ]);
 }
 
-const mintNFT = async (filePathToUpload) => {
-  if(!await verifyWallet(treasuryWallet.address)) return;
-  const rootCID = await addToIPFS(filePathToUpload);
-  const rootString = rootCID.cid.toString();
-  const rootStringURL = `ipfs://${rootString}/`;
-  const xrpDomainField = new Buffer.from(rootStringURL).toString('hex').toUpperCase();
-  const tx = await updateXRPWalletData(xrpDomainField, treasuryWallet);
+const startXumm = () => {
+  return new Promise((resolve) => {
+    let walletFundedChecking = setInterval(async () => {
+      try {
+        if(await XUMM.ping()) {
+          clearInterval(walletFundedChecking);
+          resolve()
+        }
+      } catch (e) {}
+    }, 1000); //Will check every 10 seconds
+  })
+}
+
+const xummSignIn = async () => {
+  const created = await XUMM.payload.create({ 
+    options: {
+      submit: false,
+      expire: 240,
+    },
+    user_token: uuidv4(),
+    txjson: {
+      TransactionType : "SignIn"
+    }
+  })
+  console.log(created)
+  const payload = await XUMM.payload.get(created)
+  console.log(payload)
+}
+
+const mintNFT = async (location, { thumbnail, media, metadata }, userWalletAddress) => {
+
+  // upload thumbnail and media in parallel
+  const [thumbnailCID, mediaCID] = await new Promise.all([ addToIPFS(thumbnail), addToIPFS(media)]);
+
+  const CID = await addToIPFS({ ...metadata, thumbnailUrl: thumbnailCID, dataUrl: mediaCID });
+  const CID_URI = `ipfs://${CID}/`;
+
+  // const tx = await updateXRPWalletData(xrpDomainField, treasuryWallet);
+  
+  const created = await XRUMM.payload.create({ 
+    txjson: {
+      TransactionType: 'Payment',
+      Destination: process.env.ADDRESS,
+      Amount: '1',
+      Fee: '12',
+      Memos:[
+        {
+          Memo:{
+            MemoData: Buffer.from(CID, 'utf-8').toString('hex').toUpperCase(),
+          }
+        }
+      ]
+    }
+  })
+  const payload = await XUMM.payload.get(created)
+  console.log(payload)
+
+  // saveNFT(location, tx)
+  
   return { 
-    timestamp: Date.now(),
-    ipfs: rootString,
+    ipfsCID: CID,
   }
 }
 
-const getNFT = async (tx) => {
-  // todo
-}
-
-const getNFTsFromWallet = async () => {
-  if(!await verifyWallet(treasuryWallet.address)) return;
-  const options = {
-
-    limit: 5,
-    earliestFirst: true,
-    minLedgerVersion: 33928173
-  };
-  try {
-
-    const txns = await Ripple.getTransactions(treasuryWallet.address, options);
-    console.log(txns)
-  } catch (e) {
-    console.log(e)
-  }
-}
-
-
-const connectToXRPL = async (secret) => {
-  await Ripple.connect();
-
-  if (await Ripple.isValidSecret(secret)) {
-
-    const { publicKey } = await Ripple.deriveKeypair(secret);
-    treasuryWallet.address = await Ripple.deriveAddress(publicKey)
-    treasuryWallet.axAddress = await xAddr.Encode({ account: treasuryWallet.address })
-    treasuryWallet.secret = secret;
-
-    console.log('Connected to the XRPL')
-
-  } else {
-    console.log('Failed to derive secret')
-  }
-  getNFTsFromWallet();
+const getNFT = async (location, maxCount) => {
+  return getNFTs(location, maxCount);
 }
 
 const startIPFS = async () => {
   IPFS = await create();
 }
 
-const addToIPFS = async (filePathToUpload) => {
+const addToIPFS = async (dataToUpload) => {
 
-  const path = 'public/uploads/' + filePathToUpload;
   const addOptions = {
       pin: true,
-      cidVersion: 1,
       timeout: 300000
   };
 
-  let rootCID = "";
-  for await (const file of IPFS.addAll(globSource(path), addOptions)) {
-    if (file.path == filePathToUpload){
-      rootCID = file;
-    }
-  }
-  return rootCID
+  const result = await IPFS.add(dataToUpload, addOptions);
+  return result.cid.toString();
 }
 
+const startRipple = async (secret) => {
+  await Ripple.connect();
+  if (await Ripple.isValidSecret(secret)) {
+
+    // get treasury details
+    const { publicKey } = await Ripple.deriveKeypair(secret);
+    treasuryWallet.address = await Ripple.deriveAddress(publicKey)
+    treasuryWallet.xAddress = await xAddr.Encode({ account: treasuryWallet.address})
+    treasuryWallet.secret = secret
+    
+    // check treasury is activated has enough to make transaction
+    await new Promise((resolve, reject) => {
+      const walletFundedChecking = setInterval(async () => {
+        try {
+          console.log(treasuryWallet)
+          await Ripple.getSettings(treasuryWallet.address);
+          clearInterval(walletFundedChecking);
+          resolve()
+        } catch (e) {console.log(e)}
+      }, 1000); //Will check every 10 seconds
+    })
+    console.log('Connected to the XRPL')
+  } else {
+    throw new Error('Supplied treasury wallet not valid! Try again...')
+  }
+}
+
+// const updateXRPWalletData = async (xrpDomainField, wallet) => {
+//   try {
+//     const baseFee = await Ripple.getFee();
+//     const fee = (parseFloat(baseFee) * 1000000).toFixed(0) + "";
+    
+//     const accInfo = await Ripple.getAccountInfo(wallet.address);
+//     const seqNum = accInfo.sequence;
+
+//     const walletData = JSON.stringify({
+//         "TransactionType": "AccountSet",
+//         "Account" : wallet.address,
+//         "Fee": fee,
+//         "Sequence": seqNum,
+//         "SetFlag": 5,
+//         "Domain": xrpDomainField
+//     })
+
+//     const signedTX = Ripple.sign(walletData, wallet.secret);
+
+//     const tx = await Ripple.submit(signedTX.signedTransaction)
+//     return tx;
+  
+//   } catch (e) {
+//     console.log(`Failed to mint token: ${e}`);
+//   }
+// }
+
+module.exports = {
+  initMinter,
+  stopMinter,
+  mintNFT,
+  getNFT
+}
+
+
+  // we arent doing transactions for now, just wallet domain
+// const getNFTsFromWallet = async () => {
+  // const details = await getWalletDetails(wallet.address);
+  // if(!details) return false;
+  
+  // const options = {
+  //   limit: 5,
+  //   earliestFirst: true,
+  //   minLedgerVersion: 33928173
+  // };
+  
+  // try {
+  //   const txns = await Ripple.getTransactions(wallet.address, options);
+  //   console.log(txns)
+  // } catch (e) {
+  //   console.log(e)
+  // }
+// }
+
+
 // make sure our wallet has enough drops to complete the mint
-const verifyWallet = async (walletAddress) => {
+const getWalletDetails = async (walletAddress) => {
   try {
     return new Promise(async (resolve, reject) => {
         try {
-          console.log(await Ripple.getSettings(walletAddress));
-          resolve(true)
+          const details = await Ripple.getSettings(walletAddress);
+          resolve(details)
         } catch (error) {
           if(error.data) {
             switch (error.data.error) {
@@ -131,38 +230,4 @@ const verifyWallet = async (walletAddress) => {
   } catch (error) {
     console.log(error)
   }
-}
-
-const updateXRPWalletData = async (xrpDomainField, walletAddress) => {
-  try {
-    const baseFee = await Ripple.getFee();
-    fee = (parseFloat(baseFee) * 1000000).toFixed(0) + "";
-    
-    const accInfo = await Ripple.getAccountInfo(walletAddress.address);
-    const seqNum = accInfo.sequence;
-
-    const walletData = JSON.stringify({
-        "TransactionType": "AccountSet",
-        "Account" : walletAddress.address,
-        "Fee": fee,
-        "Sequence": seqNum,
-        "SetFlag": 5,
-        "Domain": xrpDomainField
-    })
-
-    const signedTX = Ripple.sign(walletData, walletAddress.secret);
-
-    const tx = await Ripple.submit(signedTX.signedTransaction)
-    return tx;
-  
-  } catch (e) {
-    console.log(`Failed to mint token: ${e}`);
-  }
-}
-
-module.exports = {
-  initMinter,
-  stopMinter,
-  mintNFT,
-  getNFT
 }
