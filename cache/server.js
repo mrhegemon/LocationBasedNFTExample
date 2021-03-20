@@ -1,3 +1,5 @@
+
+require('dotenv').config();
 const express = require('express');
 const fileUpload = require('express-fileupload');
 const querystring = require('querystring');
@@ -7,9 +9,8 @@ const next = require('next')
 
 const fs = require('fs')
 const genThumbnail = require('simple-thumbnail')
-const { initMinter, stopMinter, mintNFT, getNFT } = require('./src/NFT');
+const { initMinter, stopMinter, mintNFT, getNFT, createSignInRequest } = require('./NFT');
 
-require('dotenv').config();
 
 const dev = process.env.NODE_ENV !== 'production'
 const nextApp = next({ dev })
@@ -25,9 +26,9 @@ app.use(express.static('public'))
 if (!process.env.SECRET) throw new Error('No treasury wallet supplied, aborting...');
 nextApp.prepare().then(() => {
   console.log("Next app prepared");
-  // initMinter(process.env.SECRET).then(() => {
-  //   console.log("Minter prepped");
-
+  initMinter(process.env.SECRET).then(() => {
+    console.log("Minter prepped");
+  })
 
   const mockNFTS = {
     tokens: [
@@ -58,6 +59,19 @@ nextApp.prepare().then(() => {
     ]
   }
 
+  app.get('/signin', async (req, res) => {
+    if(req.query.payload) {
+      console.log(req.query.payload)
+      res.json({ user_token: req.query.payload })
+    } else {
+      const signinRequest = await createSignInRequest((payload) => {
+        console.log('createSignInRequest complete payload', payload)
+      });
+      console.log('signinRequest', signinRequest)
+      res.json({ redirect: signinRequest.next.always })
+    }
+  })
+
   app.get('/get', (req, res) => {
 
     let parsedUrl = url.parse(req.url);
@@ -87,12 +101,21 @@ nextApp.prepare().then(() => {
 
       genThumbnail(`${__dirname}/public/uploads/${fileName}`, `${__dirname}/public/uploads/${fileName.replace('webm', 'png')}`, '512x?')
 
-      const nftResponse = await mintNFT(fileName);
+      const nftData = {
+        location: req.body.location,
+        media: fs.readFileSync(`${__dirname}/public/uploads/${fileName}`),
+        thumbnail: fs.readFileSync(`${__dirname}/public/uploads/${fileName.replace('webm', 'png')}`),
+        metadata: '' // if we want like text or whatever
+      }
+
+      const nftResponse = await mintNFT(nftData, req.body.user_token);
       console.log("**** NFT MINTED");
       if (!nftResponse) {
         return res.status(500).json({ msg: 'Failed to mint token, try again soon.' });
       }
       console.log(nftResponse);
+      await fs.rm(`${__dirname}/public/uploads/${fileName}`);
+      await fs.rm(`${__dirname}/public/uploads/${fileName.replace('webm','png')}`);
 
       // TODO: Change the thumbnail URL as it is currently hardcoded
       res.json({
@@ -109,4 +132,3 @@ nextApp.prepare().then(() => {
   app.listen(3000, () => console.log('Server Started...'));
 
 })
-// })

@@ -1,20 +1,30 @@
 require('dotenv').config();
-const nft = require('./src/NFT');
+const nft = require('../cache/NFT');
+
+const fake_user_token = '128ffdc8-4345-4254-a024-251514f347c2';
+let i = 0;
+const randomLocation = () => { return { lat: (Math.random()*180)-90, long: (Math.random()*360)-180 }; }
+const metadata = () => { i++; return { location: randomLocation(), thumbnail: 'https://notathumbnail.com/'+i, media: 'https://notmedia.com/'+i, metadata: 'no thanks '+i }; };
+
 
 nft.initMinter(process.env.SECRET).then(async () => {
-  const randomLocation = () => { return { lat: (Math.random()*180)-90, lat: (Math.random()*360)-180 }; }
   let time = Date.now();
-  await nft.mintNFT(randomLocation(), "Hello, NFT!")
+  await nft.mintNFT(metadata(), fake_user_token)
   console.log(Date.now() - time);
   time = Date.now();
-  await nft.mintNFT(randomLocation(), "This is a test...")
+  await nft.mintNFT(metadata(), fake_user_token)
   console.log(Date.now() - time);
   time = Date.now();
-  await nft.mintNFT(randomLocation(), "Let's hope it passes!")
+  await nft.mintNFT(metadata(), fake_user_token)
   console.log(Date.now() - time);
   time = Date.now();
-  await nft.mintNFT(randomLocation(), "One of these won't be retrieved as we've only asked for 3!")
+  await nft.mintNFT(metadata(), fake_user_token)
   console.log(Date.now() - time);
   time = Date.now();
-  console.log(await nft.getNFT(randomLocation(), 3))
+  const results = await nft.getNFT(3)
+  if(results.length) {
+    process.exit(0)
+  } else {
+    process.exit(-1);
+  }
 })

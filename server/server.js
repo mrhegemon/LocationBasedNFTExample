@@ -7,7 +7,7 @@ const url = require('url');
 var uuidv4 = require('uuid/v4');
 const fs = require('fs')
 const genThumbnail = require('simple-thumbnail')
-const { initMinter, stopMinter, mintNFT, getNFT } = require('./src/NFT');
+const { initMinter, stopMinter, mintNFT, getNFT } = require('../cache/src/NFT');
 
 
 if(!process.env.SECRET) throw new Error('No treasury wallet supplied, aborting...');
