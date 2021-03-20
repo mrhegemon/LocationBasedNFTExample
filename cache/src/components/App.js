@@ -34,12 +34,16 @@ function App() {
   
     if (model.rotation) {
         entity.setAttribute('rotation', model.rotation);
+    } else {
+      console.log("Model has no rotation")
+      entity.setAttribute('rotation', '0, 0, 0');
     }
   
     if (model.position) {
         entity.setAttribute('position', model.position);
     } else {
       console.log("Model has no position")
+      entity.setAttribute('position', '10, 0, 10');
     }
   
     entity.setAttribute('gltf-model', model.url);
@@ -73,7 +77,7 @@ function App() {
             model.getAttribute('id') == ""
         ){
           console.log("Model ID isn't set");
-
+          mode.setAttribute('id', thumbnailUrl);
           model.setAttribute('gps-entity-place', `latitude: ${latitude}; longitude: ${longitude};`);
           model.setAttribute("look-at", "[gps-camera]");
           
