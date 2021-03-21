@@ -61,7 +61,7 @@ function App() {
     (async function () {
       if (!IPFS) {
         IPFS = await create({
-          
+
         })
       }
       setViewMode(ViewModes.Info);
@@ -342,9 +342,10 @@ function App() {
       <a-scene
         cursor="rayOrigin: mouse"
         vr-mode-ui='enabled: false'
+        embedded
         arjs='sourceType: webcam; sourceWidth:1280; sourceHeight:960; displayWidth: 1280; displayHeight: 960; debugUIEnabled: true;'>
         <a-camera
-        gps-camera="minDistance: 1; maxDistance: 100000;"
+        gps-camera="minDistance: 10;"
         camera="fov: 60;"
         rotation-reader
       />
