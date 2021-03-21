@@ -34,6 +34,7 @@ function App() {
 
     const [thumbnailCID, mediaCID] = await Promise.all([ addToIPFS(thumbnail), addToIPFS(media) ]);
     const CID = await addToIPFS(JSON.stringify({ location, metadata, thumbnailUrl: thumbnailCID, dataUrl: mediaCID }));
+    await loadBlockchainData();
     return CID;
   }
 
