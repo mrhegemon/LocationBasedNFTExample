@@ -63,7 +63,7 @@ contract('Cache', (accounts) => {
         result.push(cache)
       }
 
-      let expected = ['https://ipfs.io/ipfs/QmXievn4WD2KtxY7Ayd7vN71vvqZTDdRkwANCsp6eZS2R7', '#5386E4', '#FFFFFF', '#000000']
+      let expected = ['https://ipfs.io/ipfs/QmXievn4WD2KtxY7Ayd7vN71vvqZTDdRkwANCsp6eZS2R7']
       assert.equal(result.join(','), expected.join(','))
     })
   })

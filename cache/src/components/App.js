@@ -9,6 +9,9 @@ import CaptureView from "./CaptureView.js"
 import Nav from "./Nav.js"
 import Splash from "./Splash.js"
 
+import Web3 from 'web3'
+import Cache from '../abis/Cache.json'
+
 import { ViewModes } from "../constants/ViewModes"
 
 function App() {
@@ -19,7 +22,72 @@ function App() {
   const [video, setVideo] = useState(null);
 
   const [ canUseLocation, setCanUseLocation] = useState(true);
+  const [ state, setState ] = useState ({
+    account: '',
+    contract: null,
+    totalSupply: 0,
+    caches: []
+  })
 
+  useEffect(() => {
+    (async function(){
+
+    await loadWeb3()
+    await loadBlockchainData()
+  })();
+
+  });
+
+  const loadWeb3 = async () => {
+    if (window.ethereum) {
+      window.web3 = new Web3(window.ethereum)
+      await window.ethereum.enable()
+    }
+    else if (window.web3) {
+      window.web3 = new Web3(window.web3.currentProvider)
+    }
+    else {
+      window.alert('Non-Ethereum browser detected. You should consider trying MetaMask!')
+    }
+  }
+
+  const loadBlockchainData = async() => {
+    const web3 = window.web3
+    // Load account
+    const accounts = await web3.eth.getAccounts()
+    setState({ ...state, account: accounts[0] })
+
+    const networkId = await web3.eth.net.getId()
+    const networkData = Cache.networks[networkId]
+    if(networkData) {
+      const abi = Cache.abi
+      const address = networkData.address
+      const contract = new web3.eth.Contract(abi, address)
+      setState({ ...state, contract })
+      const totalSupply = await contract.methods.totalSupply().call()
+      setState({ ...state, totalSupply })
+      // Load Caches
+      for (var i = 1; i <= totalSupply; i++) {
+        const cache = await contract.methods.caches(i - 1).call()
+      setState({
+        ...state,
+          caches: [...state.caches, cache]
+        })
+      }
+    } else {
+      window.alert('Smart contract not deployed to detected network.')
+    }
+  }
+
+  const mint = (cache) => {
+    state.contract.methods.mint(cache).send({ from: thistate.account })
+    .once('receipt', (receipt) => {
+      setState({
+        ...state,
+        caches: [...state.caches, cache]
+      })
+    })
+  }
   var markerModel = {
         url: './assets/Marker.glb',
         scale: '0.6 0.6 0.6',
@@ -157,6 +225,13 @@ function App() {
         <FileUpload upload={video} latLong={latLong} callback={handleFileUploadCallback}/>
       }
 
+      { state.caches.map((cache, key) => {
+        return(
+          <div key={key} className="col-md-3 mb-3">
+            <div>{cache}</div>
+          </div>
+        )
+      })}
     </div>
   );
 }
