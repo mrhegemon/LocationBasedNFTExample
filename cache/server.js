@@ -7,7 +7,6 @@ const https = require('https');
 const { parse } = require("url");
 
 const fs = require('fs')
-const { initMinter } = require('./src/api/NFT');
 
 const dev = process.env.NODE_ENV !== 'production'
 const nextApp = next({ dev })
@@ -22,10 +21,7 @@ app.use(express.static('public'))
 
 nextApp.prepare().then(() => {
   console.log("Next app prepared");
-  initMinter(process.env.SECRET).then(() => {
-    console.log("Minter prepped");
-  })
-
+  
   https.createServer({
     key: fs.readFileSync('key.pem'),
     cert: fs.readFileSync('cert.pem'),
