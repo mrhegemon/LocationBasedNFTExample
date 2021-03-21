@@ -41,7 +41,7 @@ function App() {
     console.log(places);
     let scene = document.querySelector('a-scene');
 
-    places.forEach(async (place) => {
+    places?.forEach(async (place) => {
 
       let metadata = await(await fetch('https://ipfs.io/ipfs/' + place)).json()
       console.log(metadata)
