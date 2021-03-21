@@ -4,7 +4,6 @@ import Progress from './Progress';
 import axios from 'axios';
 import { Button } from "@material-ui/core";
 
-import { uploadCacheToIPFS } from './IPFS'
 import { getThumbnails } from 'video-metadata-thumbnails';
 
 
@@ -21,7 +20,7 @@ const UploadStates = {
   Uploaded: 'uploaded'
 }
 
-const FileUpload = ({ mint, upload, latLong, callback }) => {
+const FileUpload = ({ mint, uploadCacheToIPFS, upload, latLong, callback }) => {
   // TODO: 
   // 1. Add video preview, re-record and submit buttons
   // 2. On cancel, hide view

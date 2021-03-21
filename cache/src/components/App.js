@@ -14,6 +14,9 @@ import Cache from '../abis/Cache.json'
 
 import { ViewModes } from "../constants/ViewModes"
 
+import { create, globSource } from 'ipfs-core';
+
+
 function App() {
   // THREEx.ArToolkitContext.baseURL = 'https://raw.githack.com/jeromeetienne/ar.js/master/three.js/'
   const [viewMode, setViewMode] = useState(ViewModes.ARView);
@@ -29,11 +32,49 @@ function App() {
     caches: []
   })
 
+
+  const [IPFS, setIPFS] = useState(null);
+const uploadCacheToIPFS = async ({ location, thumbnail, media, metadata }) => {
+  if(!IPFS) {   
+    const _IPFS = await startIPFS()
+    setIPFS(_IPFS);
+  }
+  const [thumbnailCID, mediaCID] = await Promise.all([ addToIPFS(thumbnail), addToIPFS(media) ]);
+  const CID = await addToIPFS(JSON.stringify({ location, metadata, thumbnailUrl: thumbnailCID, dataUrl: mediaCID }));
+  return CID;
+}
+
+
+const startIPFS = async () => {
+  if(!IPFS) {
+    const _IPFS = await create();
+    setIPFS(_IPFS);
+  }
+}
+
+const addToIPFS = async (dataToUpload, metadata) => {
+  await startIPFS();
+  console.log('uploading', dataToUpload, 'to ipfs')
+  const file = {
+    content: dataToUpload,
+    path: metadata ? 'metadata.json' : undefined
+  };
+
+  const addOptions = {
+    pin: true,
+    timeout: 300000
+  };
+
+  const result = await IPFS.add(file, addOptions);
+  return result.cid.toString();
+}
+
+
   useEffect(() => {
       (async function(){
-      await loadWeb3()
-      await loadBlockchainData()
-
+      await loadWeb3();
+      await loadBlockchainData();
+      await startIPFS();
     console.log("Current blockchain state is")
     console.log(state);
     const nearItems = await getNFTs({ lat, lng }, max, state.caches);
@@ -297,7 +338,7 @@ function App() {
           <CaptureView callback={handleVideoCallback} />
         }
       { viewMode === ViewModes.UploadView && 
-        <FileUpload mint={mint} upload={video} latLong={latLong} callback={handleFileUploadCallback}/>
+        <FileUpload mint={mint} uploadCacheToIPFS={uploadCacheToIPFS} upload={video} latLong={latLong} callback={handleFileUploadCallback}/>
       }
 
       { state.caches.map((cache, key) => {
