@@ -4,7 +4,7 @@ import Progress from './Progress';
 import axios from 'axios';
 import { Button } from "@material-ui/core";
 
-import { uploadCacheToIPFS } from './NFT'
+import { uploadCacheToIPFS } from './IPFS'
 import { getThumbnails } from 'video-metadata-thumbnails';
 
 
