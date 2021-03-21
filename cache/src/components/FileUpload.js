@@ -17,7 +17,7 @@ const UploadStates = {
   Uploaded: 'uploaded'
 }
 
-const FileUpload = ({ upload, latLong, callback }) => {
+const FileUpload = ({ mint, upload, latLong, callback }) => {
   // TODO: 
   // 1. Add video preview, re-record and submit buttons
   // 2. On cancel, hide view
