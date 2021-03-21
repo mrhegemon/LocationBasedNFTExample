@@ -18,16 +18,17 @@ const Info = ({callback}) => {
             position: "fixed",
             marginRight: "50%",
             marginLeft: "50%",
-            top:"5%",
+            top:"10%",
             transform: "translate(-50%, -0%)"
           }}        />
         <div className="info"
         style={{
           textAlign: "center",
-          position: "fixed",
+          position: "absolute",
           marginRight: "5%",
           marginLeft: "5%",
-          top:"30%",
+          width:"90%",
+          top:"35%",
           height:"60"
                 }} 
         >
@@ -40,6 +41,10 @@ const Info = ({callback}) => {
           For adding the Mumbai network, you can follow the steps here:
           https://docs.superfluid.finance/superfluid/docs/polygon-network-matic
         </p>
+        <p>
+          Since location + wallet in a mobile browser isn't yet possible, we call out to an external service for coarse location when using Metamask Browser. This means that it's not very accurate.
+      </p>
+
         <Button onClick={() => callback()} variant="contained" color="primary">START</Button>
         </div>
       </div>

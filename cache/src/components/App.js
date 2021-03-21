@@ -201,7 +201,12 @@ function App() {
       // TODO: Apply thumbnail as image to marker material
 
       let marker = document.createElement('a-entity');
-
+      if(marker.getAttribute('id') !== "" &&
+      marker.getAttribute('id') !== null
+      ) {
+        document.removeChild(document.lastChild);
+        return;
+      }
       console.log("Model ID isn't set");
       marker.setAttribute('id', thumbnailUrl);
       marker.setAttribute('gps-entity-place', `latitude: ${latitude}; longitude: ${longitude};`);
