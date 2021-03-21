@@ -1,4 +1,3 @@
-import { Entity, Scene } from 'aframe-react';
 import 'aframe-look-at-component';
 import { useState, useCallback, useEffect } from 'react';
 import { IconButton } from '@material-ui/core';
@@ -31,17 +30,21 @@ function App() {
   })
 
   useEffect(() => {
-    (async function(){
-
-    await loadWeb3()
-    await loadBlockchainData()
+      (async function(){
+      await loadWeb3()
+      await loadBlockchainData()
+    })();
 
     console.log("Current blockchain state is")
     console.log(state);
     // const nearItems = await getNearestNFTs({ lat, lng }, max, state.caches);
 
-  })();
-
+    let scene = document.querySelector('a-scene');
+    scene.renderer.setPixelRatio(window.devicePixelRatio);
+    let camera = document.createElement('a-camera');
+    camera.setAttribute('gps-camera', "minDistance: 0; maxDistance: 10000000000000000");
+    camera.setAttribute('rotation-reader', true);
+    scene.appendChild(camera)
   });
 
   const getNFTs = ({ lat, lng }, maxCount) => {
@@ -98,6 +101,23 @@ function App() {
     }
   }
 
+  // const loadDataFromEtherscan = async () => {
+  //   abiDecoder.addABI(Cache.abi);
+  //   const txlist = await(await fetch((location.href.includes('localhost') ? 'https://cors-anywhere.herokuapp.com/' : '') + 'https://api.etherscan.io/api?module=account&action=txlist&address=0x01871cDa2a2061dbF84529537B72cD57D01DDEA2&startblock=0&endblock=latest&page=1&sort=desc&offset=100')).json();
+    
+  //   for(const txn of txlist.result || []) {
+  //     console.log(txn)
+  //     const input = abiDecoder.decodeMethod(txn.input)
+  //     console.log(input)
+  //     // TODO: 
+  //     // const cache = input.something
+  //     // setState({
+  //     //   ...state,
+  //     //     caches: [...state.caches, cache]
+  //     //   })
+  //   }
+  // }
+
   const mint = (cache) => {
     state.contract.methods.mint(cache).send({ from: thistate.account })
     .once('receipt', (receipt) => {
@@ -108,15 +128,10 @@ function App() {
     })
   }
   var markerModel = {
-        url: './assets/Marker.glb',
-        scale: '0.1 0.1 0.1',
-        info: ''
-    }
-
-
-  useEffect(() => {
-    renderPlaces(caches);
-  }, [caches])
+    url: './assets/Marker.glb',
+    scale: '0.1 0.1 0.1',
+    info: ''
+  }
 
   useEffect(() => {
     renderPlaces(caches);
@@ -134,13 +149,13 @@ function App() {
       
       let latitude = metadata.location.lat;
       let longitude = metadata.location.lng;
-      console.log("latitude is", latitude);
-      console.log("longitude is", longitude);
+      // console.log("latitude is", latitude);
+      // console.log("longitude is", longitude);
 
       const thumbnailUrl = metadata.thumbnailUrl;
       const mediaUrl = metadata.dataUrl;
 
-      console.log("Got thumbnail", thumbnailUrl);
+      // console.log("Got thumbnail", thumbnailUrl);
 
       // TODO: Apply thumbnail as image to marker material
 
@@ -151,11 +166,13 @@ function App() {
       marker.setAttribute('gps-entity-place', `latitude: ${latitude - 0.00001}; longitude: ${longitude - 0.00001};`);
       marker.setAttribute("look-at", "[camera]");
       marker.setAttribute('rotation', '0 0 0');
-      marker.setAttribute('clickhandler', true)
       // model.setAttribute('animation-mixer', '');
 
+      marker.setAttribute('class', 'collidable')
+      marker.setAttribute('raycaster', "objects: [data-raycastable]")
 
-      let markerImage = document.createElement('a-image')
+
+      let markerImage = document.createElement('a-plane')
       markerImage.setAttribute('src', '/assets/markerImage.png');
       markerImage.setAttribute('position', '0 -1 -0.1')
       markerImage.setAttribute('scale', '8 8 8')
@@ -171,34 +188,39 @@ function App() {
 
       scene.appendChild(marker);
 
-      let texture = document.createElement('a-image')
-      texture.setAttribute('class', 'collidable')
+      let thumbnail = document.createElement('a-plane')
+      thumbnail.setAttribute('src', 'https://ipfs.io/ipfs/' + thumbnailUrl);
+      thumbnail.setAttribute('scale', '3 3 3')
+      thumbnail.object3D.visible = true;
 
-      texture.setAttribute('src', 'https://ipfs.io/ipfs/' + thumbnailUrl);
-      texture.setAttribute('scale', '3 3 3')
-      texture.setAttribute('raycaster', "objects: [data-raycastable]")
+      let videoOutline = document.createElement('a-plane')
+      videoOutline.setAttribute('color', '#FFA600')
+      videoOutline.setAttribute('scale', '1.1 1.1 1.1')
+      videoOutline.setAttribute('position', '0 0 -0.1')
 
-      let video = document.createElement('a-image')
+      let video = document.createElement('a-plane')
       video.setAttribute('src', 'https://ipfs.io/ipfs/' + mediaUrl);
-      video.setAttribute('scale', '8 8 8')
-      video.setAttribute('visible', false)
+      video.setAttribute('position', '0 -0.5 0.1')
+      video.setAttribute('scale', '9 9 9')
+      video.object3D.visible = false;
 
+      video.appendChild(videoOutline)
       
       let videoIsPlaying = false;
 
-      texture.addEventListener('click', () => {
+      marker.addEventListener('click', () => {
         videoIsPlaying = !videoIsPlaying;
-        console.log(texture)
         if(videoIsPlaying) {
-          texture.setAttribute('visible', false)
-          video.setAttribute('visible', true)
+          thumbnail.object3D.visible = false;
+          video.object3D.visible = true;
         } else {
-          texture.setAttribute('visible', true)
-          video.setAttribute('visible', false)
+          thumbnail.object3D.visible = true;
+          video.object3D.visible = false;
         }
       })
 
-      marker.appendChild(texture)
+      marker.appendChild(thumbnail)
+      marker.appendChild(video)
       
     });
   }
@@ -263,10 +285,6 @@ function App() {
       // environment={{ preset: "forest" }}
         vr-mode-ui='enabled: false'
         arjs='sourceType: webcam; sourceWidth:1280; sourceHeight:960; displayWidth: 1280; displayHeight: 960; debugUIEnabled: true;'>
-        <a-camera 
-          gps-camera="minDistance: 0; maxDistance: 10000000000000000"
-          rotation-reader
-        />
       </a-scene>
       
         { viewMode === ViewModes.ARView && 

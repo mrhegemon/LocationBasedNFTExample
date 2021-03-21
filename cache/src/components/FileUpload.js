@@ -4,6 +4,10 @@ import Progress from './Progress';
 import axios from 'axios';
 import { Button } from "@material-ui/core";
 
+import { uploadCacheToIPFS } from './IPFS'
+import { getThumbnails } from 'video-metadata-thumbnails';
+
+
 function blobToFile(theBlob, fileName){
   //A Blob() is almost a File() - it's just missing the two properties below which we will add
   if(!theBlob.lastModifiedDate) theBlob.lastModifiedDate = new Date();
@@ -44,6 +48,16 @@ const FileUpload = ({ mint, upload, latLong, callback }) => {
         console.log(upload)
         console.log(uploadedFile)
 
+        const media = upload;
+        const thumbnails = await getThumbnails(blob, {
+          quality: 0.6
+        });
+        const thumbnail = thumbnails[0].blob;
+        const metadata = {
+          timestamp: Date.now(),
+        };
+        const CID = await uploadCacheToIPFS({ location: { lat: latLong.lat, lng: latLong.lng }, media, thumbnail, metadata })
+
         axios.post(`${location.origin}/api/upload`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
@@ -62,8 +76,8 @@ const FileUpload = ({ mint, upload, latLong, callback }) => {
           setUploadState(UploadStates.Uploaded);
 
           const { resultCode, ipfsHash } = res.data;
-          mint(ipfsHash);
-          console.log("Received response from NFT upload:", resultCode, ipfsHash);
+          mint(ipfsHCIDash);
+          console.log("Received response from NFT upload:", resultCode, CID);
 
         }).catch (err => {
           console.log(err);
