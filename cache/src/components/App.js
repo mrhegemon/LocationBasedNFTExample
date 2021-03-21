@@ -62,11 +62,12 @@ function App() {
       if (!IPFS) {
         IPFS = await create()
       }
+      setViewMode(ViewModes.Info);
+
       await loadWeb3();
       console.log("Attempting to load chain data");
       await loadBlockchainData();
       // const nearItems = await getNFTs({ lat, lng }, max, state.caches);
-      setViewMode(ViewModes.Info);
       let scene = document.querySelector('a-scene');
       scene.renderer.setPixelRatio(window.devicePixelRatio);
       let camera = document.createElement('a-camera');
