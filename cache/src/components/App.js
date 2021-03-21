@@ -295,11 +295,35 @@ function App() {
       navigator.geolocation.getCurrentPosition((position) => {
         console.log(position)
         setLatLong ({lat: position.coords.latitude, lng: position.coords.longitude});
-      })
-    } else {
-      setCanUseLocation(false);
-    }
+      }, error => {
+        console.log("Error setting gps location")
+        axios.get("https://ipapi.co/json/?key=MRx6asqCN2leEg6PDBBWYCQtI0Fxdtg7JcZ5FBAwl7swsSYG8Z")
+        .then(function (response) {
+          // handle successee
+          console.log(response);
+          const { latitude, longitude } = response.data;
+          setLatLong ({lat: latitude, lng: longitude});
+          console.log("Latlong set to", latitude, longitude);
 
+          setCanUseLocation(false);
+      })})
+    } else {
+          axios.get("https://ipapi.co/json/?key=MRx6asqCN2leEg6PDBBWYCQtI0Fxdtg7JcZ5FBAwl7swsSYG8Z")
+  .then(function (response) {
+    // handle successee
+    console.log(response);
+    const { latitude, longitude } = response.data;
+    console.log("Latlong set to", latitude, longitude);
+    setLatLong ({lat: latitude, lng: longitude});
+    setCanUseLocation(false);
+
+  })
+  .catch(function (error) {
+    // handle error
+    console.log(error);
+  })
+    }
+    
   }
 
   }, [latLong])
