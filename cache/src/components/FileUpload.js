@@ -4,7 +4,7 @@ import Progress from './Progress';
 import axios from 'axios';
 import { Button } from "@material-ui/core";
 
-import { uploadCacheToIPFS } from './IPFS'
+import { uploadCacheToIPFS } from './NFT'
 import { getThumbnails } from 'video-metadata-thumbnails';
 
 
@@ -37,6 +37,7 @@ const FileUpload = ({ mint, upload, latLong, callback }) => {
     if(uploadState !== UploadStates.NotUploaded)
       return;
     setUploadState(UploadStates.Uploading);
+    (async function(){
       const formData = new FormData();
       const uploadedFile = blobToFile(upload, "video");
       setUploadedFile(uploadedFile);
@@ -49,7 +50,7 @@ const FileUpload = ({ mint, upload, latLong, callback }) => {
         console.log(uploadedFile)
 
         const media = upload;
-        const thumbnails = await getThumbnails(blob, {
+        const thumbnails = await getThumbnails(upload, {
           quality: 0.6
         });
         const thumbnail = thumbnails[0].blob;
@@ -82,6 +83,7 @@ const FileUpload = ({ mint, upload, latLong, callback }) => {
         }).catch (err => {
           console.log(err);
       })
+    })();
   }, [upload]);
 
   useEffect(() => {

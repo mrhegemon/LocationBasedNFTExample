@@ -33,11 +33,10 @@ function App() {
       (async function(){
       await loadWeb3()
       await loadBlockchainData()
-    })();
 
     console.log("Current blockchain state is")
     console.log(state);
-    // const nearItems = await getNearestNFTs({ lat, lng }, max, state.caches);
+    const nearItems = await getNFTs({ lat, lng }, max, state.caches);
 
     let scene = document.querySelector('a-scene');
     scene.renderer.setPixelRatio(window.devicePixelRatio);
@@ -45,7 +44,9 @@ function App() {
     camera.setAttribute('gps-camera', "minDistance: 0; maxDistance: 10000000000000000");
     camera.setAttribute('rotation-reader', true);
     scene.appendChild(camera)
-  });
+  })();
+
+  }, []);
 
   const getNFTs = ({ lat, lng }, maxCount) => {
     const closest = [];
@@ -227,27 +228,28 @@ function App() {
 
   const handleFileUploadCallback = (status) => {
     console.log("File uploaded and returning, status is", status);
-    getCaches(() => {
+    // getCaches(() => {
       setViewMode(ViewModes.ARView);
-    })
+      (async function(){ loadBlockchainData() })();
+    // })
   }
 
-  const getCaches = (callback) => {
-    console.log("Getting caches")
-    const max = 50;
-    axios.get(`${location.origin}/api/get?lat=${latLong.lat}&lng=${latLong.lng}&max=${max}`)
-  .then(function (response) {
-    // handle successee
-    console.log(response);
-    setCaches(response.data);
-    renderPlaces(caches);
-    if(callback) callback();
-  })
-  .catch(function (error) {
-    // handle error
-    console.log(error);
-  })
-  }
+  // const getCaches = (callback) => {
+  //   console.log("Getting caches")
+  //   const max = 50;
+  //   axios.get(`${location.origin}/api/get?lat=${latLong.lat}&lng=${latLong.lng}&max=${max}`)
+  // .then(function (response) {
+  //   // handle successee
+  //   console.log(response);
+  //   setCaches(response.data);
+  //   renderPlaces(caches);
+  //   if(callback) callback();
+  // })
+  // .catch(function (error) {
+  //   // handle error
+  //   console.log(error);
+  // })
+  // }
   
   useEffect(() => {
     if(!latLong){
@@ -258,10 +260,8 @@ function App() {
     } else {
       setCanUseLocation(false);
     }
-  return;
-  }
 
-  getCaches();
+  }
 
   }, [latLong])
 
@@ -281,8 +281,6 @@ function App() {
       <Nav />
       <a-scene
         cursor="rayOrigin: mouse"
-
-      // environment={{ preset: "forest" }}
         vr-mode-ui='enabled: false'
         arjs='sourceType: webcam; sourceWidth:1280; sourceHeight:960; displayWidth: 1280; displayHeight: 960; debugUIEnabled: true;'>
       </a-scene>

@@ -21,8 +21,8 @@ app.use(express.static('public'))
 
 nextApp.prepare().then(() => {
   console.log("Next app prepared");
-  const { initMinter } = require('./src/api/NFT');
-  initMinter()
+  // const { initMinter } = require('./src/api/NFT');
+  // initMinter()
   https.createServer({
     key: fs.readFileSync('key.pem'),
     cert: fs.readFileSync('cert.pem'),

@@ -1,9 +1,10 @@
-const { create, globSource } = require('ipfs-core');
-let ipfs;
+import { create, globSource } from 'ipfs-core';
+
+let IPFS;
 
 export const uploadCacheToIPFS = async ({ location, thumbnail, media, metadata }) => {
-  if(!ipfs) {   
-    ipfs = await startIPFS()
+  if(!IPFS) {   
+    IPFS = await startIPFS()
   }
   const [thumbnailCID, mediaCID] = await Promise.all([ addToIPFS(thumbnail), addToIPFS(media) ]);
   const CID = await addToIPFS(JSON.stringify({ location, metadata, thumbnailUrl: thumbnailCID, dataUrl: mediaCID }));
@@ -11,11 +12,24 @@ export const uploadCacheToIPFS = async ({ location, thumbnail, media, metadata }
 }
 
 
-const addToIPFS = async (dataToUpload) => {
+export const initMinter = async (secret) => {
+  await startIPFS()
+}
+
+export const stopMinter = async () => {
+  await IPFS.stop()
+}
+
+export const startIPFS = async () => {
+  if(!IPFS) IPFS = await create();
+}
+
+export const addToIPFS = async (dataToUpload, metadata) => {
 
   console.log('uploading', dataToUpload, 'to ipfs')
   const file = {
-    content: dataToUpload
+    content: dataToUpload,
+    path: metadata ? 'metadata.json' : undefined
   };
 
   const addOptions = {
