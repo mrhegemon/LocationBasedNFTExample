@@ -40,13 +40,17 @@ function App() {
     console.log(places);
     let scene = document.querySelector('a-scene');
 
-    places?.forEach((place) => {
-        let latitude = place.location.lat;
-        let longitude = place.location.lng;
+    places?.forEach(async (place) => {
+
+        let metadata = await(await fetch('https://ipfs.io/ipfs/' + place)).json()
+        console.log(metadata)
+        
+        let latitude = metadata.location.lat;
+        let longitude = metadata.location.lng;
         console.log("latitude is", latitude);
         console.log("longitude is", longitude);
 
-        const thumbnailUrl = place.thumbnailUrl;
+        const thumbnailUrl = metadata.thumbnailUrl;
 
         console.log("Got thumbnail", thumbnailUrl);
 
@@ -86,7 +90,7 @@ function App() {
   .then(function (response) {
     // handle successee
     console.log(response);
-    setCaches(response.data.tokens);
+    setCaches(response.data);
     renderPlaces(caches);
     if(callback) callback();
   })
