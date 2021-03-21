@@ -1921,10 +1921,16 @@
       "links": {},
       "address": "0x01871cDa2a2061dbF84529537B72cD57D01DDEA2",
       "transactionHash": "0xbc2bacc9d1887c6a275eabd2c56638df3e8df04583855d00923dbdf3ca5fc05e"
+    },
+    "80001": {
+      "events": {},
+      "links": {},
+      "address": "0xcb0B0673CF2C8a1938b2484Ed1c2A9DE034bD008",
+      "transactionHash": "0x0fafcaa96e104dd55fbd69f6c3be4e00bca3507d3e5a3ad0e9833b97aec643a8"
     }
   },
   "schemaVersion": "3.3.4",
-  "updatedAt": "2021-03-21T08:15:27.602Z",
+  "updatedAt": "2021-03-21T09:21:42.310Z",
   "networkType": "ethereum",
   "devdoc": {
     "methods": {
