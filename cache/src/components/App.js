@@ -1,4 +1,3 @@
-import { Entity, Scene } from 'aframe-react';
 import 'aframe-look-at-component';
 import { useState, useCallback, useEffect } from 'react';
 import { IconButton } from '@material-ui/core';
@@ -14,7 +13,6 @@ import Web3 from 'web3'
 import Cache from '../abis/Cache.json'
 
 import { ViewModes } from "../constants/ViewModes"
-import { uploadCacheToIPFS } from './IPFS'
 
 function App() {
   // THREEx.ArToolkitContext.baseURL = 'https://raw.githack.com/jeromeetienne/ar.js/master/three.js/'
@@ -102,6 +100,23 @@ function App() {
       window.alert('Smart contract not deployed to detected network.')
     }
   }
+
+  // const loadDataFromEtherscan = async () => {
+  //   abiDecoder.addABI(Cache.abi);
+  //   const txlist = await(await fetch((location.href.includes('localhost') ? 'https://cors-anywhere.herokuapp.com/' : '') + 'https://api.etherscan.io/api?module=account&action=txlist&address=0x01871cDa2a2061dbF84529537B72cD57D01DDEA2&startblock=0&endblock=latest&page=1&sort=desc&offset=100')).json();
+    
+  //   for(const txn of txlist.result || []) {
+  //     console.log(txn)
+  //     const input = abiDecoder.decodeMethod(txn.input)
+  //     console.log(input)
+  //     // TODO: 
+  //     // const cache = input.something
+  //     // setState({
+  //     //   ...state,
+  //     //     caches: [...state.caches, cache]
+  //     //   })
+  //   }
+  // }
 
   const mint = (cache) => {
     state.contract.methods.mint(cache).send({ from: thistate.account })

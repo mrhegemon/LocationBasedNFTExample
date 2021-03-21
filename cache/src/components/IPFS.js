@@ -2,12 +2,11 @@ const { create, globSource } = require('ipfs-core');
 let ipfs;
 
 export const uploadCacheToIPFS = async ({ location, thumbnail, media, metadata }) => {
-  if(!ipfs) {
+  if(!ipfs) {   
     ipfs = await startIPFS()
   }
-  const locationObj = JSON.parse(location);
   const [thumbnailCID, mediaCID] = await Promise.all([ addToIPFS(thumbnail), addToIPFS(media) ]);
-  const CID = await addToIPFS(JSON.stringify({ location: locationObj, metadata, thumbnailUrl: thumbnailCID, dataUrl: mediaCID }));
+  const CID = await addToIPFS(JSON.stringify({ location, metadata, thumbnailUrl: thumbnailCID, dataUrl: mediaCID }));
   return CID;
 }
 
