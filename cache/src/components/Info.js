@@ -28,7 +28,7 @@ const Info = ({callback}) => {
           marginRight: "5%",
           marginLeft: "5%",
           width:"90%",
-          top:"35%",
+          top:"30%",
           height:"60"
                 }} 
         >
