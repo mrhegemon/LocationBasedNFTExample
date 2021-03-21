@@ -16,6 +16,7 @@ import { ViewModes } from "../constants/ViewModes"
 
 import { create, globSource } from 'ipfs-core';
 
+let IPFS
 
 function App() {
   // THREEx.ArToolkitContext.baseURL = 'https://raw.githack.com/jeromeetienne/ar.js/master/three.js/'
@@ -32,52 +33,39 @@ function App() {
     caches: []
   })
 
-
-  const [IPFS, setIPFS] = useState(null);
-const uploadCacheToIPFS = async ({ location, thumbnail, media, metadata }) => {
-  if(!IPFS) {   
-    const _IPFS = await startIPFS()
-    setIPFS(_IPFS);
+  const uploadCacheToIPFS = async ({ location, thumbnail, media, metadata }) => {
+    if(!IPFS) {   
+      IPFS = await create()
+    }
+    const [thumbnailCID, mediaCID] = await Promise.all([ addToIPFS(thumbnail), addToIPFS(media) ]);
+    const CID = await addToIPFS(JSON.stringify({ location, metadata, thumbnailUrl: thumbnailCID, dataUrl: mediaCID }));
+    return CID;
   }
-  const [thumbnailCID, mediaCID] = await Promise.all([ addToIPFS(thumbnail), addToIPFS(media) ]);
-  const CID = await addToIPFS(JSON.stringify({ location, metadata, thumbnailUrl: thumbnailCID, dataUrl: mediaCID }));
-  return CID;
-}
 
+  const addToIPFS = async (dataToUpload, metadata) => {
+    console.log('uploading', dataToUpload, 'to ipfs')
+    const file = {
+      content: dataToUpload,
+      path: metadata ? 'metadata.json' : undefined
+    };
 
-const startIPFS = async () => {
-  if(!IPFS) {
-    const _IPFS = await create();
-    setIPFS(_IPFS);
+    const addOptions = {
+      pin: true,
+      timeout: 300000
+    };
+
+    const result = await IPFS.add(file, addOptions);
+    return result.cid.toString();
   }
-}
-
-const addToIPFS = async (dataToUpload, metadata) => {
-  await startIPFS();
-  console.log('uploading', dataToUpload, 'to ipfs')
-  const file = {
-    content: dataToUpload,
-    path: metadata ? 'metadata.json' : undefined
-  };
-
-  const addOptions = {
-    pin: true,
-    timeout: 300000
-  };
-
-  const result = await IPFS.add(file, addOptions);
-  return result.cid.toString();
-}
 
 
   useEffect(() => {
       (async function(){
       await loadWeb3();
       await loadBlockchainData();
-      await startIPFS();
     console.log("Current blockchain state is")
     console.log(state);
-    const nearItems = await getNFTs({ lat, lng }, max, state.caches);
+    // const nearItems = await getNFTs({ lat, lng }, max, state.caches);
 
     let scene = document.querySelector('a-scene');
     scene.renderer.setPixelRatio(window.devicePixelRatio);
