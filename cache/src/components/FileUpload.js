@@ -33,7 +33,7 @@ const FileUpload = ({ mint, upload, latLong, callback }) => {
   const [uploadPercentage, setUploadPercentage] = useState(0);
   const [uploadedFile, setUploadedFile] = useState(null);
 
-  useEffect(() => {
+  useEffect(async () => {
     if(uploadState !== UploadStates.NotUploaded)
       return;
     setUploadState(UploadStates.Uploading);
