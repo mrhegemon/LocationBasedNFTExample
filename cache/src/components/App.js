@@ -1,4 +1,5 @@
 import { Entity, Scene } from 'aframe-react';
+import 'aframe-look-at-component';
 import { useState, useCallback, useEffect } from 'react';
 import { IconButton } from '@material-ui/core';
 import PhotoCamera from '@material-ui/icons/PhotoCamera';
@@ -90,7 +91,7 @@ function App() {
   }
   var markerModel = {
         url: './assets/Marker.glb',
-        scale: '0.6 0.6 0.6',
+        scale: '0.1 0.1 0.1',
         info: ''
     }
 
@@ -110,40 +111,80 @@ function App() {
 
     places?.forEach(async (place) => {
 
-        let metadata = await(await fetch('https://ipfs.io/ipfs/' + place)).json()
-        console.log(metadata)
-        
-        let latitude = metadata.location.lat;
-        let longitude = metadata.location.lng;
-        console.log("latitude is", latitude);
-        console.log("longitude is", longitude);
+      let metadata = await(await fetch('https://ipfs.io/ipfs/' + place)).json()
+      console.log(metadata)
+      
+      let latitude = metadata.location.lat;
+      let longitude = metadata.location.lng;
+      console.log("latitude is", latitude);
+      console.log("longitude is", longitude);
 
-        const thumbnailUrl = metadata.thumbnailUrl;
+      const thumbnailUrl = metadata.thumbnailUrl;
+      const mediaUrl = metadata.dataUrl;
 
-        console.log("Got thumbnail", thumbnailUrl);
+      console.log("Got thumbnail", thumbnailUrl);
 
-        // TODO: Apply thumbnail as image to marker material
+      // TODO: Apply thumbnail as image to marker material
 
-        let model = document.createElement('a-entity');
+      let marker = document.createElement('a-entity');
 
-          console.log("Model ID isn't set");
-          model.setAttribute('id', thumbnailUrl);
-          model.setAttribute('gps-entity-place', `latitude: ${latitude}; longitude: ${longitude};`);
-          model.setAttribute("look-at", "[gps-camera]");
-          model.setAttribute('rotation', '0 0 0');
-          model.setAttribute('animation-mixer', '');
-          
-          model.addEventListener('loaded', () => {
-            window.dispatchEvent(new CustomEvent('gps-entity-place-loaded'))
-          });
+      console.log("Model ID isn't set");
+      marker.setAttribute('id', thumbnailUrl);
+      marker.setAttribute('gps-entity-place', `latitude: ${latitude - 0.00001}; longitude: ${longitude - 0.00001};`);
+      marker.setAttribute("look-at", "[camera]");
+      marker.setAttribute('rotation', '0 0 0');
+      marker.setAttribute('clickhandler', true)
+      // model.setAttribute('animation-mixer', '');
 
-          model.setAttribute('scale', markerModel.scale);
-          model.setAttribute('gltf-model', markerModel.url);
 
-          scene.appendChild(model);
+      let markerImage = document.createElement('a-image')
+      markerImage.setAttribute('src', '/assets/markerImage.png');
+      markerImage.setAttribute('position', '0 -1 -0.1')
+      markerImage.setAttribute('scale', '8 8 8')
+      
+      marker.appendChild(markerImage)
+
+      marker.addEventListener('loaded', () => {
+        window.dispatchEvent(new CustomEvent('gps-entity-place-loaded'))
+      });
+
+      marker.setAttribute('scale', markerModel.scale);
+      // model.setAttribute('gltf-model', markerModel.url);
+
+      scene.appendChild(marker);
+
+      let texture = document.createElement('a-image')
+      texture.setAttribute('class', 'collidable')
+
+      texture.setAttribute('src', 'https://ipfs.io/ipfs/' + thumbnailUrl);
+      texture.setAttribute('scale', '3 3 3')
+      texture.setAttribute('raycaster', "objects: [data-raycastable]")
+
+      let video = document.createElement('a-image')
+      video.setAttribute('src', 'https://ipfs.io/ipfs/' + mediaUrl);
+      video.setAttribute('scale', '8 8 8')
+      video.setAttribute('visible', false)
+
+      
+      let videoIsPlaying = false;
+
+      texture.addEventListener('click', () => {
+        videoIsPlaying = !videoIsPlaying;
+        console.log(texture)
+        if(videoIsPlaying) {
+          texture.setAttribute('visible', false)
+          video.setAttribute('visible', true)
+        } else {
+          texture.setAttribute('visible', true)
+          video.setAttribute('visible', false)
+        }
+      })
+
+      marker.appendChild(texture)
+      
     });
   }
-  
+
   const handleFileUploadCallback = (status) => {
     console.log("File uploaded and returning, status is", status);
     getCaches(() => {
@@ -199,15 +240,15 @@ function App() {
     <div className="App">
       <Nav />
       <a-scene
+        cursor="rayOrigin: mouse"
 
       // environment={{ preset: "forest" }}
-      vr-mode-ui='enabled: false'
-      arjs='sourceType: webcam; sourceWidth:1280; sourceHeight:960; displayWidth: 1280; displayHeight: 960; debugUIEnabled: true;'>
-        <a-camera
+        vr-mode-ui='enabled: false'
+        arjs='sourceType: webcam; sourceWidth:1280; sourceHeight:960; displayWidth: 1280; displayHeight: 960; debugUIEnabled: true;'>
+        <a-camera 
           gps-camera="minDistance: 0; maxDistance: 10000000000000000"
           rotation-reader
         />
-
       </a-scene>
       
         { viewMode === ViewModes.ARView && 

@@ -31,7 +31,7 @@ const getNearestNFTs = async (location, maxCount) => {
 }
 
 const startIPFS = async () => {
-  IPFS = await create();
+  if(!IPFS) IPFS = await create();
 }
 
 const addToIPFS = async (dataToUpload, metadata) => {
