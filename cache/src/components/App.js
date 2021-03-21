@@ -263,7 +263,7 @@ function App() {
           <CaptureView callback={handleVideoCallback} />
         }
       { viewMode === ViewModes.UploadView && 
-        <FileUpload upload={video} latLong={latLong} callback={handleFileUploadCallback}/>
+        <FileUpload mint={mint} upload={video} latLong={latLong} callback={handleFileUploadCallback}/>
       }
 
       { state.caches.map((cache, key) => {

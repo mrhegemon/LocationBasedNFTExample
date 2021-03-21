@@ -62,6 +62,7 @@ const FileUpload = ({ upload, latLong, callback }) => {
           setUploadState(UploadStates.Uploaded);
 
           const { resultCode, ipfsHash } = res.data;
+          mint(ipfsHash);
           console.log("Received response from NFT upload:", resultCode, ipfsHash);
 
         }).catch (err => {
