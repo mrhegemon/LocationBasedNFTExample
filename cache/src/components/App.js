@@ -14,6 +14,7 @@ import Web3 from 'web3'
 import Cache from '../abis/Cache.json'
 
 import { ViewModes } from "../constants/ViewModes"
+import { uploadCacheToIPFS } from './IPFS'
 
 function App() {
   // THREEx.ArToolkitContext.baseURL = 'https://raw.githack.com/jeromeetienne/ar.js/master/three.js/'
@@ -31,12 +32,18 @@ function App() {
   })
 
   useEffect(() => {
-    (async function(){
+      (async function(){
 
-    await loadWeb3()
-    await loadBlockchainData()
-  })();
+      await loadWeb3()
+      await loadBlockchainData()
+    })();
 
+    let scene = document.querySelector('a-scene');
+    scene.renderer.setPixelRatio(window.devicePixelRatio);
+    let camera = document.createElement('a-camera');
+    camera.setAttribute('gps-camera', "minDistance: 0; maxDistance: 10000000000000000");
+    camera.setAttribute('rotation-reader', true);
+    scene.appendChild(camera)
   });
 
   const loadWeb3 = async () => {
@@ -94,15 +101,6 @@ function App() {
     scale: '0.1 0.1 0.1',
     info: ''
   }
-
-  useEffect(() => {
-    let scene = document.querySelector('a-scene');
-    scene.renderer.setPixelRatio(window.devicePixelRatio);
-    let camera = document.createElement('a-camera');
-    camera.setAttribute('gps-camera', "minDistance: 0; maxDistance: 10000000000000000");
-    camera.setAttribute('rotation-reader', true);
-    scene.appendChild(camera)
-  })
 
   useEffect(() => {
     renderPlaces(caches);
@@ -181,7 +179,6 @@ function App() {
 
       marker.addEventListener('click', () => {
         videoIsPlaying = !videoIsPlaying;
-        console.log(videoIsPlaying)
         if(videoIsPlaying) {
           thumbnail.object3D.visible = false;
           video.object3D.visible = true;
