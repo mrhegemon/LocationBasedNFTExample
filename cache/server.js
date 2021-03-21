@@ -26,6 +26,7 @@ nextApp.prepare().then(() => {
     key: fs.readFileSync('key.pem'),
     cert: fs.readFileSync('cert.pem'),
   }, (req, res) => {
+    fs.mkdirSync('./data/', { recursive:true })
     const parsedUrl = parse(req.url, true);
     handle(req, res, parsedUrl);
   }).listen(3000, () => console.log('Server Started...'));
