@@ -22,21 +22,16 @@ function App() {
   // THREEx.ArToolkitContext.baseURL = 'https://raw.githack.com/jeromeetienne/ar.js/master/three.js/'
   const [viewMode, setViewMode] = useState(ViewModes.ARView);
   const [latLong, setLatLong] = useState(null);
-  const [caches, setCaches] = useState([]);
   const [video, setVideo] = useState(null);
 
   const [ canUseLocation, setCanUseLocation] = useState(true);
-  const [ state, setState ] = useState ({
-    account: '',
-    contract: null,
-    totalSupply: 0,
-    caches: []
-  })
+  const [ account, setAccount ] = useState('');
+  const [contract, setContract] = useState(null);
+  const [totalSupply, setTotalSupply] = useState(0);
+  const [caches, setCaches] = useState([]);
 
   const uploadCacheToIPFS = async ({ location, thumbnail, media, metadata }) => {
-    if(!IPFS) {   
-      IPFS = await create()
-    }
+
     const [thumbnailCID, mediaCID] = await Promise.all([ addToIPFS(thumbnail), addToIPFS(media) ]);
     const CID = await addToIPFS(JSON.stringify({ location, metadata, thumbnailUrl: thumbnailCID, dataUrl: mediaCID }));
     return CID;
@@ -61,10 +56,12 @@ function App() {
 
   useEffect(() => {
       (async function(){
+        if(!IPFS) {   
+          IPFS = await create()
+        }
       await loadWeb3();
+      console.log("Attempting to load chain data");
       await loadBlockchainData();
-    console.log("Current blockchain state is")
-    console.log(state);
     // const nearItems = await getNFTs({ lat, lng }, max, state.caches);
 
     let scene = document.querySelector('a-scene');
@@ -92,10 +89,14 @@ function App() {
 
   const loadWeb3 = async () => {
     if (window.ethereum) {
+      console.log("ethereum located")
       window.web3 = new Web3(window.ethereum)
       await window.ethereum.enable()
+      console.log("Eth enabled");
     }
     else if (window.web3) {
+      console.log("Web3 located")
+
       window.web3 = new Web3(window.web3.currentProvider)
     }
     else {
@@ -104,28 +105,35 @@ function App() {
   }
 
   const loadBlockchainData = async() => {
+    console.log("loadBlockchainData")
+
     const web3 = window.web3
     // Load account
     const accounts = await web3.eth.getAccounts()
-    setState({ ...state, account: accounts[0] })
+
+    setAccount(accounts[0] )
+
+    console.log("Accounts are", account)
 
     const networkId = await web3.eth.net.getId()
     const networkData = Cache.networks[networkId]
+    console.log("networkData is", networkData)
+
+
     if(networkData) {
       const abi = Cache.abi
       const address = networkData.address
       const contract = new web3.eth.Contract(abi, address)
-      setState({ ...state, contract })
       const totalSupply = await contract.methods.totalSupply().call()
-      setState({ ...state, totalSupply })
+      let caches = [];
       // Load Caches
       for (var i = 1; i <= totalSupply; i++) {
         const cache = await contract.methods.caches(i - 1).call()
-      setState({
-        ...state,
-          caches: [...state.caches, cache]
-        })
+        caches.push(cache);
       }
+      setTotalSupply(totalSupply);
+      setContract(contract);
+      setCaches(caches);
     } else {
       window.alert('Smart contract not deployed to detected network.')
     }
@@ -149,12 +157,11 @@ function App() {
   // }
 
   const mint = (cache) => {
-    state.contract.methods.mint(cache).send({ from: thistate.account })
+    contract.methods.mint(cache).send({ from: account })
     .once('receipt', (receipt) => {
-      setState({
-        ...state,
-        caches: [...state.caches, cache]
-      })
+      const newCaches = caches;
+      newCaches.push(cache);
+      setCaches(newCaches);
     })
   }
   var markerModel = {
@@ -260,7 +267,6 @@ function App() {
     console.log("File uploaded and returning, status is", status);
     // getCaches(() => {
       setViewMode(ViewModes.ARView);
-      (async function(){ loadBlockchainData() })();
     // })
   }
 
@@ -332,7 +338,7 @@ function App() {
         <FileUpload mint={mint} uploadCacheToIPFS={uploadCacheToIPFS} upload={video} latLong={latLong} callback={handleFileUploadCallback}/>
       }
 
-      { state.caches.map((cache, key) => {
+      { caches.map((cache, key) => {
         return(
           <div key={key} className="col-md-3 mb-3">
             <div>{cache}</div>
