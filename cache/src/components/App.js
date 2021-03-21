@@ -194,12 +194,11 @@ function App() {
       if(marker) return console.log("Marker already exists, ignoring");
 
       marker = document.createElement('a-entity');
-      scene.appendChild(marker);
 
       console.log("Model ID isn't set");
       marker.setAttribute('id', mediaUrl);
       marker.setAttribute('gps-entity-place', `latitude: ${latitude}; longitude: ${longitude};`);
-      // marker.setAttribute("look-at", "[gps-camera]");
+      marker.setAttribute("look-at", "[gps-camera]");
       marker.setAttribute('rotation', '0 0 0');
       marker.setAttribute('animation-mixer', '');
 
@@ -256,6 +255,7 @@ function App() {
 
       marker.appendChild(thumbnail)
       marker.appendChild(video)
+      scene.appendChild(marker);
 
     });
   }
