@@ -193,7 +193,7 @@ function App() {
 
       console.log("Model ID isn't set");
       marker.setAttribute('id', thumbnailUrl);
-      marker.setAttribute('gps-entity-place', `latitude: ${latitude - 0.00001}; longitude: ${longitude - 0.00001};`);
+      marker.setAttribute('gps-entity-place', `latitude: ${latitude}; longitude: ${longitude};`);
       marker.setAttribute("look-at", "[camera]");
       marker.setAttribute('rotation', '0 0 0');
       // model.setAttribute('animation-mixer', '');
@@ -202,10 +202,11 @@ function App() {
       marker.setAttribute('raycaster', "objects: [data-raycastable]")
 
 
-      let markerImage = document.createElement('a-plane')
+      let markerImage = document.createElement('a-circle')
       markerImage.setAttribute('src', '/assets/markerImage.png');
       markerImage.setAttribute('position', '0 -1 -0.1')
       markerImage.setAttribute('scale', '8 8 8')
+      markerImage.setAttribute('radius', '0.5');
       
       marker.appendChild(markerImage)
 
@@ -218,7 +219,7 @@ function App() {
 
       scene.appendChild(marker);
 
-      let thumbnail = document.createElement('a-plane')
+      let thumbnail = document.createElement('a-circle')
       thumbnail.setAttribute('src', 'https://ipfs.io/ipfs/' + thumbnailUrl);
       thumbnail.setAttribute('scale', '3 3 3')
       thumbnail.object3D.visible = true;
@@ -284,8 +285,10 @@ function App() {
     if(!latLong){
     if (navigator.geolocation) {
       setCanUseLocation(true);
-      navigator.geolocation.getCurrentPosition((position) =>
-      setLatLong ({lat: position.coords.latitude, lng: position.coords.longitude}));
+      navigator.geolocation.getCurrentPosition((position) => {
+        console.log(position)
+        setLatLong ({lat: position.coords.latitude, lng: position.coords.longitude});
+      })
     } else {
       setCanUseLocation(false);
     }
