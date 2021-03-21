@@ -57,31 +57,8 @@ const FileUpload = ({ mint, uploadCacheToIPFS, upload, latLong, callback }) => {
           timestamp: Date.now(),
         };
         const CID = await uploadCacheToIPFS({ location: { lat: latLong.lat, lng: latLong.lng }, media, thumbnail, metadata })
-
-        axios.post(`${location.origin}/api/upload`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          },
-          onUploadProgress: progressEvent => {
-            console.log(progressEvent);
-            const uploadPercentage = parseInt(
-              Math.round((progressEvent.loaded * 100) / progressEvent.total)
-            );
-            setUploadPercentage(
-              uploadPercentage
-            );
-
-          }
-        }).then((res) => {
-          setUploadState(UploadStates.Uploaded);
-
-          const { resultCode, ipfsHash } = res.data;
-          mint(ipfsHCIDash);
-          console.log("Received response from NFT upload:", resultCode, CID);
-
-        }).catch (err => {
-          console.log(err);
-      })
+        mint(CID);
+        setUploadState(UploadStates.Uploaded);
     })();
   }, [upload]);
 
