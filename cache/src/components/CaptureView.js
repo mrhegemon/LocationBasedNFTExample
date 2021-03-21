@@ -3,23 +3,23 @@ import VideoRecorder from 'react-video-recorder'
 import CloseIcon from '@material-ui/icons/Close';
 import { Button, IconButton } from '@material-ui/core';
 
-function iOS() {
-  return [
-    'iPad Simulator',
-    'iPhone Simulator',
-    'iPod Simulator',
-    'iPad',
-    'iPhone',
-    'iPod'
-  ].includes(navigator.platform)
-  // iPad on iOS 13 detection
-  || (navigator.userAgent.includes("Mac") && "ontouchend" in document)
-}
 
 const CaptureView = (props) => {
   const { callback } = props;
   const [videoBlob, setVideoBlob] = useState(null);
 
+  function iOS() {
+    return [
+      'iPad Simulator',
+      'iPhone Simulator',
+      'iPod Simulator',
+      'iPad',
+      'iPhone',
+      'iPod'
+    ].includes(navigator.platform)
+    // iPad on iOS 13 detection
+    || (navigator.userAgent.includes("Mac") && "ontouchend" in document)
+  }
   // TODO: 
   // 3. On finished recording, go to preview/upload
   // 4. Flip camera!
@@ -39,7 +39,7 @@ const CaptureView = (props) => {
 
     }
     <VideoRecorder
-      useVideoInput={!iOS()}
+      useVideoInput={iOS()}
       onRecordingComplete={video => {
         setVideoBlob(video);
         // callback(true, videoBlob);
