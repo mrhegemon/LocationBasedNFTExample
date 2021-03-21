@@ -42,7 +42,7 @@ const Info = ({callback}) => {
           https://docs.superfluid.finance/superfluid/docs/polygon-network-matic
         </p>
         <p>
-          Since location + wallet in a mobile browser isn't yet possible, we call out to an external service for coarse location when using Metamask Browser. This means that it's not very accurate.
+          Since location + wallet in a mobile browser isn't yet possible, we call out to an external service for coarse location when using Metamask Browser. This means that it's  unless you have location services enabled.
       </p>
 
         <Button onClick={() => callback()} variant="contained" color="primary">START</Button>

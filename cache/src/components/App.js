@@ -60,7 +60,9 @@ function App() {
   useEffect(() => {
     (async function () {
       if (!IPFS) {
-        IPFS = await create()
+        IPFS = await create({
+          
+        })
       }
       setViewMode(ViewModes.Info);
 
@@ -70,26 +72,9 @@ function App() {
       // const nearItems = await getNFTs({ lat, lng }, max, state.caches);
       let scene = document.querySelector('a-scene');
       scene.renderer.setPixelRatio(window.devicePixelRatio);
-      let camera = document.createElement('a-camera');
-      camera.setAttribute('gps-camera', "minDistance: 0; maxDistance: 10000000000000000");
-      camera.setAttribute('rotation-reader', true);
-      scene.appendChild(camera)
     })();
 
   }, []);
-
-  const getNFTs = ({ lat, lng }, maxCount) => {
-    const closest = [];
-    Object.entries(data).forEach(([nftLocation, nft]) => {
-      const [nftLat, nftLong] = nftLocation.split(':');
-
-      // todo: make this better
-      if (Math.abs(nftLat - lat) < 1 && Math.abs(nftLong - lng) < 1 && closest.length < maxCount - 1) {
-        closest.push(nft);
-      }
-    })
-    return closest;
-  }
 
   const loadWeb3 = async () => {
     if (window.ethereum) {
@@ -182,12 +167,16 @@ function App() {
     console.log("Rendering places");
     console.log(places);
     let scene = document.querySelector('a-scene');
-
+    var entities = document.querySelectorAll('a-entity[gps-entity-place]');
+    console.log("Entities size is", entities.length);
+    entities?.forEach((entity) => {
+      entity.parentNode.remove(entity);
+    })
     console.log("******* PLACES IS")
     console.log(places);
     places?.forEach(async (place) => {
 
-      let metadata = await (await fetch('https://ipfs.io/ipfs/' + place)).json()
+      let metadata = await (await fetch('https://ipfs.io/ipfs/' + place)).json();
       console.log(metadata)
 
       let latitude = metadata.location.lat;
@@ -201,20 +190,18 @@ function App() {
       // console.log("Got thumbnail", thumbnailUrl);
 
       // TODO: Apply thumbnail as image to marker material
+      let marker = document.getElementById(mediaUrl);
+      if(marker) return console.log("Marker already exists, ignoring");
 
-      let marker = document.createElement('a-entity');
-      if(marker.getAttribute('id') !== "" &&
-      marker.getAttribute('id') !== null
-      ) {
-        document.removeChild(document.lastChild);
-        return;
-      }
+      marker = document.createElement('a-entity');
+      scene.appendChild(marker);
+
       console.log("Model ID isn't set");
-      marker.setAttribute('id', thumbnailUrl);
+      marker.setAttribute('id', mediaUrl);
       marker.setAttribute('gps-entity-place', `latitude: ${latitude}; longitude: ${longitude};`);
-      marker.setAttribute("look-at", "[camera]");
+      // marker.setAttribute("look-at", "[gps-camera]");
       marker.setAttribute('rotation', '0 0 0');
-      // model.setAttribute('animation-mixer', '');
+      marker.setAttribute('animation-mixer', '');
 
       marker.setAttribute('class', 'collidable')
       marker.setAttribute('raycaster', "objects: [data-raycastable]")
@@ -222,7 +209,7 @@ function App() {
 
       let markerImage = document.createElement('a-circle')
       markerImage.setAttribute('src', '/assets/markerImage.png');
-      markerImage.setAttribute('position', '0 -1 -0.1')
+      markerImage.setAttribute('position', '0 -1 -0.2')
       markerImage.setAttribute('scale', '8 8 8')
       markerImage.setAttribute('radius', '0.5');
 
@@ -235,7 +222,6 @@ function App() {
       marker.setAttribute('scale', markerModel.scale);
       // model.setAttribute('gltf-model', markerModel.url);
 
-      scene.appendChild(marker);
 
       let thumbnail = document.createElement('a-circle')
       thumbnail.setAttribute('src', 'https://ipfs.io/ipfs/' + thumbnailUrl);
@@ -245,11 +231,11 @@ function App() {
       let videoOutline = document.createElement('a-plane')
       videoOutline.setAttribute('color', '#FFA600')
       videoOutline.setAttribute('scale', '1.1 1.1 1.1')
-      videoOutline.setAttribute('position', '0 0 -0.1')
+      videoOutline.setAttribute('position', '0 0 -0.15')
 
       let video = document.createElement('a-plane')
       video.setAttribute('src', 'https://ipfs.io/ipfs/' + mediaUrl);
-      video.setAttribute('position', '0 -0.5 0.1')
+      video.setAttribute('position', '0 -0.5 0.125')
       video.setAttribute('scale', '9 9 9')
       video.object3D.visible = false;
 
@@ -356,8 +342,13 @@ function App() {
       <a-scene
         cursor="rayOrigin: mouse"
         vr-mode-ui='enabled: false'
-        arjs='sourceType: webcam; sourceWidth:1280; sourceHeight:960; displayWidth: 1280; displayHeight: 960; debugUIEnabled: false;'>
-      </a-scene>
+        arjs='sourceType: webcam; sourceWidth:1280; sourceHeight:960; displayWidth: 1280; displayHeight: 960; debugUIEnabled: true;'>
+        <a-camera
+        gps-camera="minDistance: 1; maxDistance: 100000;"
+        camera="fov: 60;"
+        rotation-reader
+      />
+        </a-scene>
       { viewMode === ViewModes.Splash &&
         <Splash />
       }
