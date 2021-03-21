@@ -33,10 +33,13 @@ function App() {
 
   useEffect(() => {
       (async function(){
-
       await loadWeb3()
       await loadBlockchainData()
     })();
+
+    console.log("Current blockchain state is")
+    console.log(state);
+    // const nearItems = await getNearestNFTs({ lat, lng }, max, state.caches);
 
     let scene = document.querySelector('a-scene');
     scene.renderer.setPixelRatio(window.devicePixelRatio);
@@ -45,6 +48,19 @@ function App() {
     camera.setAttribute('rotation-reader', true);
     scene.appendChild(camera)
   });
+
+  const getNFTs = ({ lat, lng }, maxCount) => {
+    const closest = [];
+    Object.entries(data).forEach(([nftLocation, nft]) => {
+      const [nftLat, nftLong] = nftLocation.split(':');
+  
+      // todo: make this better
+      if(Math.abs(nftLat - lat) < 1 && Math.abs(nftLong - lng) < 1 && closest.length < maxCount - 1) {
+        closest.push(nft);
+      }
+    })
+    return closest;
+  }
 
   const loadWeb3 = async () => {
     if (window.ethereum) {
